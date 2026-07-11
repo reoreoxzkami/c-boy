@@ -1,9 +1,9 @@
-name: Weekly Auto Game Developer (Groq version)
+name: Continuous Auto Game Developer (Groq version)
 
 on:
   schedule:
-    # 毎週月曜日の午前9時（日本時間）に自動実行
-    - cron: '0 0 * * 1'
+    # 10分に1回自動実行
+    - cron: '*/10 * * * *'
   workflow_dispatch: # 手動実行用
 
 permissions:
@@ -26,7 +26,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install groq
 
-    - name: Generate Game
+    - name: Run Auto Improver
       env:
         GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       run: python generate_game.py
@@ -36,10 +36,10 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add .
-        # コミットする変更があるか確認してからコミットする
+        # コミットする変更があるか確認
         if ! git diff --cached --exit-code; then
-          git commit -m "Auto-generated game for this week"
-          git push
+          git commit -m "Auto-improve game to itch.io level"
+          git push origin main
         else
-          echo "No changes to commit."
+          echo "No improvements to commit this time."
         fi
