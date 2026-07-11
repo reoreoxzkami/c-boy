@@ -34,7 +34,9 @@
       y: canvas.height / 2,
       radius: 10,
       speed: 2,
-      direction: 0
+      direction: 0,
+      score: 0,
+      lives: 3
     };
 
     // Define the enemies
@@ -48,9 +50,6 @@
         direction: Math.random() * 2 * Math.PI
       });
     }
-
-    // Define the score
-    var score = 0;
 
     // Main game loop
     function update() {
@@ -119,33 +118,43 @@
             oscillator.stop(audioCtx.currentTime + 0.1);
           }
 
-          // Game over
-          alert('Game Over! Your score was ' + score);
-          score = 0;
-          player.x = canvas.width / 2;
-          player.y = canvas.height / 2;
-          enemies = [];
-          for (var j = 0; j < 10; j++) {
-            enemies.push({
-              x: Math.random() * canvas.width,
-              y: Math.random() * canvas.height,
-              radius: 10,
-              speed: 1,
-              direction: Math.random() * 2 * Math.PI
-            });
+          // Decrease player lives
+          player.lives--;
+          if (player.lives <= 0) {
+            // Game over
+            alert('Game Over! Your score was ' + player.score);
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            player.lives = 3;
+            player.score = 0;
+            enemies = [];
+            for (var j = 0; j < 10; j++) {
+              enemies.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: 10,
+                speed: 1,
+                direction: Math.random() * 2 * Math.PI
+              });
+            }
+          } else {
+            // Reset player position
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
           }
         }
       }
 
-      // Draw the score
+      // Draw the score and lives
       ctx.font = '24px Arial';
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
-      ctx.fillText('Score: ' + score, 10, 10);
+      ctx.fillText('Score: ' + player.score, 10, 10);
+      ctx.fillText('Lives: ' + player.lives, 10, 40);
 
       // Update the score
-      score++;
+      player.score++;
 
       // Request the next frame
       requestAnimationFrame(update);
