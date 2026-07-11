@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Galaxy Blast</title>
+  <style>
+    /* Add some basic styling to our game */
+    body {
+      margin: 0;
+      background-color: #000;
+    }
+    canvas {
+      border: 1px solid #fff;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="640" height="480"></canvas>
+  <script>
+    // Get the canvas element
+    var canvas = document.getElementById('gameCanvas');
+    var ctx = canvas.getContext('2d');
+
+    // Set up the audio context
+    var audioCtx = new AudioContext();
+    var mute = false;
+
+    // Define some colors
+    var colors = ['#ff69b4', '#33cc33', '#6666ff', '#ffff66'];
+
+    // Define the player
+    var player = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      radius: 10,
+      speed: 2,
+      direction: 0
+    };
+
+    // Define the enemies
+    var enemies = [];
+    for (var i = 0; i < 10; i++) {
+      enemies.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: 10,
+        speed: 1,
+        direction: Math.random() * 2 * Math.PI
+      });
+    }
+
+    // Define the score
+    var score = 0;
+
+    // Main game loop
+    function update() {
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw the player
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, 2 * Math.PI);
+      ctx.fillStyle = colors[0];
+      ctx.fill();
+
+      // Move the player
+      player.x += Math.cos(player.direction) * player.speed;
+      player.y += Math.sin(player.direction) * player.speed;
+
+      // Keep the player inside the canvas
+      if (player.x - player.radius < 0) {
+        player.x = player.radius;
+      } else if (player.x + player.radius > canvas.width) {
+        player.x = canvas.width - player.radius;
+      }
+      if (player.y - player.radius < 0) {
+        player.y = player.radius;
+      } else if (player.y + player.radius > canvas.height) {
+        player.y = canvas.height - player.radius;
+      }
+
+      // Draw the enemies
+      for (var i = 0; i < enemies.length; i++) {
+        ctx.beginPath();
+        ctx.arc(enemies[i].x, enemies[i].y, enemies[i].radius, 0, 2 * Math.PI);
+        ctx.fillStyle = colors[1];
+        ctx.fill();
+
+        // Move the enemies
+        enemies[i].x += Math.cos(enemies[i].direction) * enemies[i].speed;
+        enemies[i].y += Math.sin(enemies[i].direction) * enemies[i].speed;
+
+        // Keep the enemies inside the canvas
+        if (enemies[i].x - enemies[i].radius < 0) {
+          enemies[i].x = enemies[i].radius;
+          enemies[i].direction = Math.PI - enemies[i].direction;
+        } else if (enemies[i].x + enemies[i].radius > canvas.width) {
+          enemies[i].x = canvas.width - enemies[i].radius;
+          enemies[i].direction = Math.PI - enemies[i].direction;
+        }
+        if (enemies[i].y - enemies[i].radius < 0) {
+          enemies[i].y = enemies[i].radius;
+          enemies[i].direction = -enemies[i].direction;
+        } else if (enemies[i].y + enemies[i].radius > canvas.height) {
+          enemies[i].y = canvas.height - enemies[i].radius;
+          enemies[i].direction = -enemies[i].direction;
+        }
+
+        // Check for collision with the player
+        var distance = Math.sqrt(Math.pow(player.x - enemies[i].x, 2) + Math.pow(player.y - enemies[i].y, 2));
+        if (distance < player.radius + enemies[i].radius) {
+          // Play a sound effect
+          if (!mute) {
+            var oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.value = 200;
+            oscillator.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+          }
+
+          // Game over
+          alert('Game Over! Your score was ' + score);
+          score = 0;
+          player.x = canvas.width / 2;
+          player.y = canvas.height / 2;
+          enemies = [];
+          for (var j = 0; j < 10; j++) {
+            enemies.push({
+              x: Math.random() * canvas.width,
+              y: Math.random() * canvas.height,
+              radius: 10,
+              speed: 1,
+              direction: Math.random() * 2 * Math.PI
+            });
+          }
+        }
+      }
+
+      // Draw the score
+      ctx.font = '24px Arial';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('Score: ' + score, 10, 10);
+
+      // Update the score
+      score++;
+
+      // Request the next frame
+      requestAnimationFrame(update);
+    }
+
+    // Handle keyboard input
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'ArrowUp') {
+        player.direction = -Math.PI / 2;
+      } else if (event.key === 'ArrowDown') {
+        player.direction = Math.PI / 2;
+      } else if (event.key === 'ArrowLeft') {
+        player.direction = Math.PI;
+      } else if (event.key === 'ArrowRight') {
+        player.direction = 0;
+      } else if (event.key === ' ') {
+        // Play a sound effect
+        if (!mute) {
+          var oscillator = audioCtx.createOscillator();
+          oscillator.type = 'sawtooth';
+          oscillator.frequency.value = 400;
+          oscillator.connect(audioCtx.destination);
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+      } else if (event.key === 'm') {
+        mute = !mute;
+      }
+    });
+
+    // Start the game
+    update();
+  </script>
+</body>
+</html>
