@@ -51,7 +51,8 @@
         y: Math.random() * canvas.height,
         radius: 10,
         speed: 1,
-        direction: Math.random() * 2 * Math.PI
+        direction: Math.random() * 2 * Math.PI,
+        type: Math.random() < 0.5 ? 'normal' : 'fast'
       });
     }
 
@@ -86,12 +87,12 @@
       for (var i = 0; i < enemies.length; i++) {
         ctx.beginPath();
         ctx.arc(enemies[i].x, enemies[i].y, enemies[i].radius, 0, 2 * Math.PI);
-        ctx.fillStyle = colors[1];
+        ctx.fillStyle = enemies[i].type === 'normal' ? colors[1] : colors[2];
         ctx.fill();
 
         // Move the enemies
-        enemies[i].x += Math.cos(enemies[i].direction) * enemies[i].speed;
-        enemies[i].y += Math.sin(enemies[i].direction) * enemies[i].speed;
+        enemies[i].x += Math.cos(enemies[i].direction) * (enemies[i].type === 'normal' ? enemies[i].speed : enemies[i].speed * 2);
+        enemies[i].y += Math.sin(enemies[i].direction) * (enemies[i].type === 'normal' ? enemies[i].speed : enemies[i].speed * 2);
 
         // Keep the enemies inside the canvas
         if (enemies[i].x - enemies[i].radius < 0) {
@@ -140,7 +141,8 @@
                 y: Math.random() * canvas.height,
                 radius: 10,
                 speed: 1,
-                direction: Math.random() * 2 * Math.PI
+                direction: Math.random() * 2 * Math.PI,
+                type: Math.random() < 0.5 ? 'normal' : 'fast'
               });
             }
           } else {
