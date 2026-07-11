@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Canvas Game</title>
+  <style>
+    /* CSS styles */
+    body {
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    #canvas {
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="400" height="400"></canvas>
+  <script>
+    // Get the canvas element
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+
+    // Set the canvas dimensions
+    canvas.width = 400;
+    canvas.height = 400;
+
+    // Define the game variables
+    var playerX = canvas.width / 2;
+    var playerY = canvas.height / 2;
+    var playerSpeed = 5;
+    var score = 0;
+    var enemies = [];
+
+    // Define the enemy class
+    function Enemy(x, y) {
+      this.x = x;
+      this.y = y;
+      this.speed = 2;
+    }
+
+    // Define the game loop
+    function gameLoop() {
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw the player
+      ctx.fillStyle = 'blue';
+      ctx.fillRect(playerX, playerY, 20, 20);
+
+      // Move the player
+      if (rightPressed) {
+        playerX += playerSpeed;
+      }
+      if (leftPressed) {
+        playerX -= playerSpeed;
+      }
+      if (upPressed) {
+        playerY -= playerSpeed;
+      }
+      if (downPressed) {
+        playerY += playerSpeed;
+      }
+
+      // Keep the player inside the canvas
+      if (playerX < 0) {
+        playerX = 0;
+      }
+      if (playerX > canvas.width - 20) {
+        playerX = canvas.width - 20;
+      }
+      if (playerY < 0) {
+        playerY = 0;
+      }
+      if (playerY > canvas.height - 20) {
+        playerY = canvas.height - 20;
+      }
+
+      // Draw and move the enemies
+      for (var i = 0; i < enemies.length; i++) {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(enemies[i].x, enemies[i].y, 20, 20);
+        enemies[i].x += enemies[i].speed;
+        if (enemies[i].x > canvas.width) {
+          enemies.splice(i, 1);
+        }
+      }
+
+      // Add new enemies
+      if (Math.random() < 0.1) {
+        enemies.push(new Enemy(0, Math.random() * (canvas.height - 20)));
+      }
+
+      // Check for collisions
+      for (var i = 0; i < enemies.length; i++) {
+        if (checkCollision(playerX, playerY, enemies[i].x, enemies[i].y)) {
+          // Game over
+          alert('Game Over! Your score was ' + score);
+          score = 0;
+          enemies = [];
+          playerX = canvas.width / 2;
+          playerY = canvas.height / 2;
+        }
+      }
+
+      // Increase the score
+      score++;
+
+      // Draw the score
+      ctx.font = '24px Arial';
+      ctx.fillStyle = 'black';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('Score: ' + score, 10, 10);
+
+      // Request the next frame
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Define the checkCollision function
+    function checkCollision(x1, y1, x2, y2) {
+      if (x1 < x2 + 20 && x1 + 20 > x2 && y1 < y2 + 20 && y1 + 20 > y2) {
+        return true;
+      }
+      return false;
+    }
+
+    // Define the key press variables
+    var rightPressed = false;
+    var leftPressed = false;
+    var upPressed = false;
+    var downPressed = false;
+
+    // Add event listeners for key presses
+    document.addEventListener('keydown', function(e) {
+      if (e.key == 'ArrowRight') {
+        rightPressed = true;
+      }
+      if (e.key == 'ArrowLeft') {
+        leftPressed = true;
+      }
+      if (e.key == 'ArrowUp') {
+        upPressed = true;
+      }
+      if (e.key == 'ArrowDown') {
+        downPressed = true;
+      }
+    });
+
+    document.addEventListener('keyup', function(e) {
+      if (e.key == 'ArrowRight') {
+        rightPressed = false;
+      }
+      if (e.key == 'ArrowLeft') {
+        leftPressed = false;
+      }
+      if (e.key == 'ArrowUp') {
+        upPressed = false;
+      }
+      if (e.key == 'ArrowDown') {
+        downPressed = false;
+      }
+    });
+
+    // Start the game loop
+    gameLoop();
+  </script>
+</body>
+</html>
