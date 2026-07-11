@@ -36,7 +36,11 @@
       speed: 2,
       direction: 0,
       score: 0,
-      lives: 3
+      lives: 3,
+      upgrades: {
+        speed: 1,
+        radius: 1
+      }
     };
 
     // Define the enemies
@@ -58,24 +62,24 @@
 
       // Draw the player
       ctx.beginPath();
-      ctx.arc(player.x, player.y, player.radius, 0, 2 * Math.PI);
+      ctx.arc(player.x, player.y, player.radius * player.upgrades.radius, 0, 2 * Math.PI);
       ctx.fillStyle = colors[0];
       ctx.fill();
 
       // Move the player
-      player.x += Math.cos(player.direction) * player.speed;
-      player.y += Math.sin(player.direction) * player.speed;
+      player.x += Math.cos(player.direction) * player.speed * player.upgrades.speed;
+      player.y += Math.sin(player.direction) * player.speed * player.upgrades.speed;
 
       // Keep the player inside the canvas
-      if (player.x - player.radius < 0) {
-        player.x = player.radius;
-      } else if (player.x + player.radius > canvas.width) {
-        player.x = canvas.width - player.radius;
+      if (player.x - player.radius * player.upgrades.radius < 0) {
+        player.x = player.radius * player.upgrades.radius;
+      } else if (player.x + player.radius * player.upgrades.radius > canvas.width) {
+        player.x = canvas.width - player.radius * player.upgrades.radius;
       }
-      if (player.y - player.radius < 0) {
-        player.y = player.radius;
-      } else if (player.y + player.radius > canvas.height) {
-        player.y = canvas.height - player.radius;
+      if (player.y - player.radius * player.upgrades.radius < 0) {
+        player.y = player.radius * player.upgrades.radius;
+      } else if (player.y + player.radius * player.upgrades.radius > canvas.height) {
+        player.y = canvas.height - player.radius * player.upgrades.radius;
       }
 
       // Draw the enemies
@@ -107,7 +111,7 @@
 
         // Check for collision with the player
         var distance = Math.sqrt(Math.pow(player.x - enemies[i].x, 2) + Math.pow(player.y - enemies[i].y, 2));
-        if (distance < player.radius + enemies[i].radius) {
+        if (distance < player.radius * player.upgrades.radius + enemies[i].radius) {
           // Play a sound effect
           if (!mute) {
             var oscillator = audioCtx.createOscillator();
@@ -127,6 +131,8 @@
             player.y = canvas.height / 2;
             player.lives = 3;
             player.score = 0;
+            player.upgrades.speed = 1;
+            player.upgrades.radius = 1;
             enemies = [];
             for (var j = 0; j < 10; j++) {
               enemies.push({
@@ -152,6 +158,8 @@
       ctx.textBaseline = 'top';
       ctx.fillText('Score: ' + player.score, 10, 10);
       ctx.fillText('Lives: ' + player.lives, 10, 40);
+      ctx.fillText('Speed: ' + player.upgrades.speed, 10, 70);
+      ctx.fillText('Radius: ' + player.upgrades.radius, 10, 100);
 
       // Update the score
       player.score++;
@@ -182,6 +190,18 @@
         }
       } else if (event.key === 'm') {
         mute = !mute;
+      } else if (event.key === 'u') {
+        // Upgrade player speed
+        if (player.score >= 100) {
+          player.upgrades.speed += 0.1;
+          player.score -= 100;
+        }
+      } else if (event.key === 'r') {
+        // Upgrade player radius
+        if (player.score >= 100) {
+          player.upgrades.radius += 0.1;
+          player.score -= 100;
+        }
       }
     });
 
