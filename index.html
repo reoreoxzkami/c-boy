@@ -252,6 +252,21 @@
 
     // Start the game
     update();
+
+    // Add a new enemy type: 'boss'
+    function addBoss() {
+      enemies.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: 20,
+        speed: 0.5,
+        direction: Math.random() * 2 * Math.PI,
+        type: 'boss'
+      });
+    }
+
+    // Add a boss enemy every 10 seconds
+    setInterval(addBoss, 10000);
   </script>
 </body>
 </html>
