@@ -56,6 +56,17 @@
       });
     }
 
+    // Define the power-ups
+    var powerUps = [];
+    for (var i = 0; i < 5; i++) {
+      powerUps.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: 5,
+        type: Math.random() < 0.5 ? 'speed' : 'radius'
+      });
+    }
+
     // Main game loop
     function update() {
       // Clear the canvas
@@ -150,6 +161,38 @@
             player.x = canvas.width / 2;
             player.y = canvas.height / 2;
           }
+        }
+      }
+
+      // Draw the power-ups
+      for (var i = 0; i < powerUps.length; i++) {
+        ctx.beginPath();
+        ctx.arc(powerUps[i].x, powerUps[i].y, powerUps[i].radius, 0, 2 * Math.PI);
+        ctx.fillStyle = powerUps[i].type === 'speed' ? colors[3] : '#ff0000';
+        ctx.fill();
+
+        // Check for collision with the player
+        var distance = Math.sqrt(Math.pow(player.x - powerUps[i].x, 2) + Math.pow(player.y - powerUps[i].y, 2));
+        if (distance < player.radius * player.upgrades.radius + powerUps[i].radius) {
+          // Play a sound effect
+          if (!mute) {
+            var oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.value = 400;
+            oscillator.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+          }
+
+          // Upgrade player
+          if (powerUps[i].type === 'speed') {
+            player.upgrades.speed += 0.1;
+          } else {
+            player.upgrades.radius += 0.1;
+          }
+
+          // Remove power-up
+          powerUps.splice(i, 1);
         }
       }
 
