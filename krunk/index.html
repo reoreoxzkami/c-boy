@@ -2659,7 +2659,7 @@ void main() {
           pfT += raw; pfN++;
           if (pfT < 2) return;
           const fps = pfN / pfT; pfT = 0; pfN = 0;
-          if (fps >= 50) return; if (Q === 2 && fps < 38) { Q = 1; document.querySelectorAll(".x-q").forEach((b) => b.classList.toggle("is-on", +b.dataset.q === Q)); return; }
+          if (fps >= 50) return; /* quality preset is never changed automatically (user choice wins) */
           if (pixR > 0.75) { pixR = Math.max(0.75, pixR - 0.25); renderer.setPixelRatio(pixR); resize(); }
           else if (sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
         }
