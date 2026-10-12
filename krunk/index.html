@@ -1234,7 +1234,7 @@ diffuseColor *= tpc;
             const y = pts[i + 1]; e.min = Math.min(e.min, y); e.max = Math.max(e.max, y); e.sy += y; e.n++;
           }
           const hgt = (e) => (e.n ? e.max - e.min : 1e9);
-          const atMax = hgt(ends[1]) < hgt(ends[0]), me = atMax ? ends[1] : ends[0];
+          const atMax = ax === "z" ? true : hgt(ends[1]) < hgt(ends[0]), me = atMax ? ends[1] : ends[0];   // all kit guns face +Z (the arms were posed that way); the thin-end guess flipped the sniper
           src.position.sub(c);
           const turn = new THREE.Group(); turn.add(src);
           // rotation about Y maps +X to -Z at +PI/2
