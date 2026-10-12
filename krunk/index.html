@@ -1365,7 +1365,8 @@ diffuseColor *= tpc;
             const hg = actx.createGain(); hg.gain.value = 0.035; ns.connect(hum); hum.connect(hg); hg.connect(actx.destination);
             ns.start();
           } catch (e) { sfxBus = null; revIn = null; }
-          fetch("https://cdn.jsdelivr.net/gh/RezaParsian/free-sfx-bgm-pack@master/audio-pack/mp3/bgm/bgm_terminal_flow.mp3")
+          // BGM: "Open Warfare" by Ruskerdax (CC0, OpenGameArt) - modern combat track, mirrored in the c-boy repo
+          fetch("https://cdn.jsdelivr.net/gh/reoreoxzkami/c-boy@main/krunk/bgm_open_warfare.mp3")
             .then((r) => r.arrayBuffer()).then((a) => actx.decodeAudioData(a)).then((b) => {
               const s = actx.createBufferSource(); s.buffer = b; s.loop = true; s.connect(musicGain); s.start();
             }).catch(() => {});
