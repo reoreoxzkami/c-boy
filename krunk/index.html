@@ -3292,6 +3292,78 @@ void main() {
           }
           return { tick };
         })();
+        // ---------- ?aimtest : automated sniper accuracy check (dev only) ----------
+        const AIMT = (function () {
+          if (!/aimtest/.test(location.search)) return { tick() {} };
+          const out = document.createElement("pre"); out.id = "aimtest";
+          out.style.cssText = "position:fixed;left:8px;top:8px;z-index:99999;background:rgba(0,0,0,.85);color:#0f0;font:12px monospace;padding:8px;max-width:90vw;max-height:90vh;overflow:auto;white-space:pre-wrap";
+          out.textContent = "aimtest: waiting for assets...\n"; document.body.appendChild(out);
+          const log = (t) => { out.textContent += t + "\n"; console.log(t); };
+          let pin = null; const park = new THREE.Vector3(0, -80, 0);
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+          const E = new THREE.Vector3(), F = new THREE.Vector3(), rc = new THREE.Raycaster();
+          function freeDist(yw) {
+            E.set(P.pos.x, P.pos.y + 1.2, P.pos.z); F.set(-Math.sin(yw), 0, -Math.cos(yw));
+            rc.set(E, F); rc.far = 300; const h = rc.intersectObjects(walls, false).find((x) => x.distance > 0.3);
+            return h ? h.distance : 300;
+          }
+          async function shot(b, aimY, opt) {
+            P.cd = 0; P.reload = 0; P.ammo = W[cur].mag; swapT = 0; P.dead = false; P.hp = P.max; b.prot = 0; b.hp = 1e6; b.dead = 0;
+            const dx = b.g.position.x - P.pos.x, dz = b.g.position.z - P.pos.z, ey = P.pos.y + P.eye;
+            yaw = Math.atan2(-dx, -dz); pitch = Math.atan2(b.g.position.y + aimY - ey, Math.hypot(dx, dz));
+            scopeDown = !opt.hip; await sleep(opt.hip ? 300 : 700);
+            if (opt.shake) shake = opt.shake;
+            await sleep(30);
+            const hits0 = P.hits, heads0 = P.heads;
+            // what does the centre ray see?
+            ray.setFromCamera({ x: 0, y: 0 }, aimCam()); ray.far = 300;
+            const f = ray.intersectObjects(liveTargets(), false).find((x) => x.distance > 0.3);
+            const what = !f ? "nothing" : f.object.userData.bot ? (f.object.userData.head ? "botHead" : "botBody") : "wall@" + f.distance.toFixed(1);
+            const sc = scoped, fov = camera.fov.toFixed(1);
+            shoot();
+            const r = { hit: P.hits > hits0, head: P.heads > heads0, what, sc, fov };
+            scopeDown = false; await sleep(250);
+            return r;
+          }
+          async function run() {
+            await sleep(9000);
+            window.xNextCls = 1; P.nextCls = 1; start(); await sleep(2500);
+            log("weapon=" + W[cur].name + " bots=" + bots.length + " model=" + !!bots[0].model);
+            const b = bots[0];
+            // model alignment
+            if (b.headB) { const hp = new THREE.Vector3(); b.headB.getWorldPosition(hp); log("headBone rel g: " + hp.sub(b.g.position).toArray().map((v) => v.toFixed(2)).join(",")); }
+            // clear direction
+            let best = 0, by = 0; for (let i = 0; i < 48; i++) { const yw = (i / 48) * Math.PI * 2, d = freeDist(yw); if (d > best) { best = d; by = yw; } }
+            log("player " + P.pos.toArray().map((v) => v.toFixed(1)).join(",") + " clear " + best.toFixed(1) + "m");
+            pin = { b, pos: new THREE.Vector3() };
+            const cases = [];
+            for (const d of [8, 20, 40, 70]) if (d < best - 2) cases.push(d);
+            let tot = 0, ok = 0;
+            for (const d of cases) {
+              pin.pos.set(P.pos.x - Math.sin(by) * d, P.pos.y, P.pos.z - Math.cos(by) * d);
+              for (const [lab, y, o] of [["chest", 1.1, {}], ["head", 1.72, {}], ["chest+shake", 1.1, { shake: 0.05 }], ["chest hip", 1.1, { hip: true }]]) {
+                const r = await shot(b, y, o); tot++; if (r.hit) ok++;
+                log(`d=${d} ${lab}: hit=${r.hit} head=${r.head} centre=${r.what} scoped=${r.sc} fov=${r.fov}`);
+              }
+            }
+            // moving target: strafing at 4 m/s, 30 m
+            pin.move = 4; let mh = 0;
+            for (let i = 0; i < 6; i++) { const r = await shot(b, 1.1, {}); if (r.hit) mh++; }
+            pin.move = 0;
+            log(`strafe 4m/s aimed at current pos: ${mh}/6`);
+            log(`DONE ${ok}/${tot}`);
+          }
+          run().catch((e) => log("ERR " + e.message));
+          return {
+            tick(dt) {
+              if (!pin) return;
+              for (const o of bots) if (o !== pin.b) { o.g.position.copy(park); o.cd = 99; }
+              if (pin.move) { pin.t = (pin.t || 0) + dt; pin.b.g.position.copy(pin.pos); pin.b.g.position.x += Math.sin(pin.t * 2) * 2; }
+              else pin.b.g.position.copy(pin.pos);
+              pin.b.cd = 99; pin.b.prot = 0; P.vel.set(0, 0, 0); P.prot = 9;
+            },
+          };
+        })();
         function loop() {
           requestAnimationFrame(loop);
           const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
@@ -3361,7 +3433,7 @@ void main() {
           if (sc !== scoped) { scoped = sc; $("x-scope").classList.toggle("is-on", sc); $("x-hud").classList.toggle("is-scoped", sc); }
           gun.visible = !scoped && !P.dead;
           updateArms();
-          MID2.tick(dt); LOW2.tick(dt); LOW3.tick(dt);
+          MID2.tick(dt); LOW2.tick(dt); LOW3.tick(dt); AIMT.tick(dt);
           // Speed lines
           const sl = live ? Math.max(0, Math.min(1, (sp - 12.5) / 5)) * 0.6 : 0;
           if (Math.abs(sl - speedOp) > 0.01) { speedOp = sl; speedEl.style.opacity = sl.toFixed(2); }
