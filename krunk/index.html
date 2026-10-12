@@ -2599,7 +2599,7 @@ void main() {
 #endif
   // cheap bloom from the colour mip chain (only what is brighter than white bleeds)
   vec3 hb = textureLod(tColor, vUv, 3.0).rgb * 0.5 + textureLod(tColor, vUv, 5.0).rgb * 0.5;
-  col += aces(max(hb * uExpo / 0.6 - 0.9, 0.0)) * 0.22;
+  col += aces(max(hb * uExpo / 0.6 - 2.2, 0.0)) * 0.12;
   // grade: slight desaturation, warm highlights, cool shadows, a touch of contrast
   float L = lum(col);
   col = mix(vec3(L), col, 0.88);
@@ -2855,6 +2855,17 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
           const rain = new THREE.LineSegments(rGeo, new THREE.LineBasicMaterial({ color: 0xb8c4d0, transparent: true, opacity: 0.32, depthWrite: false, fog: true }));
           rain.frustumCulled = false; rain.visible = false; scene.add(rain);
           const rOrg = new THREE.Vector3();
+          let roofH = null; const RG = 64;   // 1 m cells, x/z -64..64
+          function buildRoof() {
+            roofH = new Float32Array(RG * 2 * RG * 2).fill(-1);
+            for (const b of blocks) {
+              const t = b.max.y; if (t - b.min.y > 25 || b.max.x - b.min.x > 60 || b.max.z - b.min.z > 60) continue;   // skip ground slab and the invisible boundary walls
+              const x0 = Math.max(0, Math.floor(b.min.x + RG)), x1 = Math.min(RG * 2 - 1, Math.ceil(b.max.x + RG) - 1);
+              const z0 = Math.max(0, Math.floor(b.min.z + RG)), z1 = Math.min(RG * 2 - 1, Math.ceil(b.max.z + RG) - 1);
+              for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) { const i = z * RG * 2 + x; if (t > roofH[i]) roofH[i] = t; }
+            }
+          }
+          function roofAt(x, z) { const ix = Math.floor(x + RG), iz = Math.floor(z + RG); if (ix < 0 || iz < 0 || ix >= RG * 2 || iz >= RG * 2) return -1; return roofH[iz * RG * 2 + ix]; }
           function wet(on) {
             scene.traverse((o) => {
               if (!o.isMesh && !o.isInstancedMesh) return;
@@ -2884,7 +2895,7 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
           function setWeather(r) {
             env.rain = !!r; try { localStorage.setItem("krunkW", r ? "1" : "0"); } catch (e) {}
             document.querySelectorAll(".x-w").forEach((b) => b.classList.toggle("is-on", +b.dataset.w === (r ? 1 : 0)));
-            loadSky(TODi); apply();
+            loadSky(env.rain && !(TOD[TODi] && TOD[TODi].night) ? 3 : TODi); apply();
           }
           document.querySelectorAll(".x-w").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); setWeather(+b.dataset.w); }));
 
@@ -2905,13 +2916,18 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
             // rain streaks follow the camera
             if (rain.visible) {
               const cp = camera.position; rOrg.set(Math.round(cp.x), 0, Math.round(cp.z));
-              const a = rGeo.attributes.position.array;
+              if (!roofH) buildRoof();
+              const a = rGeo.attributes.position.array, by = Math.max(0, cp.y - 4);
+              rain.position.set(rOrg.x, by, rOrg.z);
               for (let i = 0; i < RN; i++) {
                 const o = i * 6; let y = a[o + 1] - rSpd[i] * dt;
-                if (y < 0) { y = RH; a[o] = (Math.random() * 2 - 1) * RB; a[o + 2] = (Math.random() * 2 - 1) * RB; }
+                if (y < 0 || y + by - 0.55 < roofAt(a[o] + rOrg.x, a[o + 2] + rOrg.z)) {
+                  a[o] = (Math.random() * 2 - 1) * RB; a[o + 2] = (Math.random() * 2 - 1) * RB; y = RH;
+                  if (RH + by - 0.55 < roofAt(a[o] + rOrg.x, a[o + 2] + rOrg.z)) y = -500;   // under a roof: park it out of sight, retry next frame
+                }
                 a[o + 1] = y; a[o + 3] = a[o] - 0.02; a[o + 4] = y - 0.55; a[o + 5] = a[o + 2];
               }
-              rain.position.set(rOrg.x, Math.max(0, cp.y - 4), rOrg.z); rGeo.attributes.position.needsUpdate = true;
+              rGeo.attributes.position.needsUpdate = true;
               wetT += dt; if (wetT > 4) { wetT = 0; wet(true); }
             }
             // nearest lamps / neon get the real lights (night or dusk only)
@@ -2929,7 +2945,7 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
         })();
         // time of day now also drives night lighting / interior lights / signs
         const setTOD0 = setTOD;
-        setTOD = function (t) { MID2.env.night = TOD[t] && TOD[t].night ? 1 : 0; setTOD0(t); MID2.apply(); };
+        setTOD = function (t) { MID2.env.night = TOD[t] && TOD[t].night ? 1 : 0; setTOD0(t); if (MID2.env.rain && !MID2.env.night) loadSky(3); MID2.apply(); };
         MID2.env.night = TOD[TODi] && TOD[TODi].night ? 1 : 0;
         MID2.setWeather(MID2.rain0);
         function loop() {
