@@ -2621,12 +2621,12 @@ void main() {
           postQ = Q;
           if (Q === 0) { renderer.toneMapping = THREE.ACESFilmicToneMapping; return; }
           const rt = new THREE.WebGLRenderTarget(postSize.x, postSize.y, {
-            type: THREE.HalfFloatType, format: THREE.RGBAFormat, samples: Q === 1 ? 4 : 0,
+            type: THREE.HalfFloatType, format: THREE.RGBAFormat, samples: 4,
             minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: true, depthBuffer: true,
           });
-          if (Q === 2) { rt.depthTexture = new THREE.DepthTexture(postSize.x, postSize.y); rt.depthTexture.type = THREE.UnsignedIntType; }
+          
           postRT = rt;
-          postMat.defines.AO = Q === 2 ? 1 : 0; postMat.needsUpdate = true;
+          postMat.defines.AO = 0; postMat.needsUpdate = true;
           postMat.uniforms.tColor.value = rt.texture; postMat.uniforms.tDepth.value = rt.depthTexture || null;
           postMat.uniforms.uRes.value.copy(postSize);
         }
@@ -2643,6 +2643,8 @@ void main() {
           Q = POST_OK ? q : 0; try { localStorage.setItem("krunkQ", String(Q)); } catch (e) {}
           document.querySelectorAll(".x-q").forEach((b) => b.classList.toggle("is-on", +b.dataset.q === Q));
           const ms = Q === 2 && renderer.capabilities.maxTextureSize >= 8192 ? 4096 : Q === 0 ? 1024 : 2048;
+          const pr = Q === 2 ? Math.min(devicePixelRatio, 2) : Math.min(devicePixelRatio, 1.25);
+          if (pr !== pixR) { pixR = pr; renderer.setPixelRatio(pixR); resize(); }
           if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
         }
         document.querySelectorAll(".x-q").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); setQuality(+b.dataset.q); }));
@@ -2662,7 +2664,7 @@ void main() {
           pfT += raw; pfN++;
           if (pfT < 2) return;
           const fps = pfN / pfT; pfT = 0; pfN = 0;
-          if (fps >= 50) return; /* quality preset is never changed automatically (user choice wins) */
+          if (fps >= 50 || Q === 2) return; /* quality preset is never changed automatically (user choice wins) */
           if (pixR > 0.75) { pixR = Math.max(0.75, pixR - 0.25); renderer.setPixelRatio(pixR); resize(); }
           else if (sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
         }
