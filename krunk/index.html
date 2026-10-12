@@ -2538,7 +2538,7 @@ diffuseColor *= tpc;
           depthTest: false, depthWrite: false,
           defines: { AO: 0 },
           uniforms: {
-            tColor: { value: null }, tDepth: { value: null }, uRes: { value: new THREE.Vector2(1, 1) }, uExpo: { value: 0.9 },
+            tColor: { value: null }, tDepth: { value: null }, uAds: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) }, uExpo: { value: 0.9 },
             uNear: { value: 0.1 }, uFar: { value: 260 }, uP0: { value: 1 }, uP1: { value: 1 }, uAOR: { value: 0.7 }, uAOI: { value: 1.0 },
           },
           vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
@@ -2546,7 +2546,7 @@ diffuseColor *= tpc;
 precision highp float;
 varying vec2 vUv;
 uniform sampler2D tColor; uniform sampler2D tDepth;
-uniform vec2 uRes; uniform float uExpo, uNear, uFar, uP0, uP1, uAOR, uAOI;
+uniform vec2 uRes; uniform float uExpo, uNear, uFar, uP0, uP1, uAOR, uAOI; uniform float uAds;
 vec3 rrt(vec3 v) { vec3 a = v * (v + 0.0245786) - 0.000090537; vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081; return a / b; }
 vec3 aces(vec3 c) {
   const mat3 I = mat3(vec3(0.59719, 0.07600, 0.02840), vec3(0.35458, 0.90834, 0.13383), vec3(0.04823, 0.01566, 0.83777));
@@ -2597,6 +2597,16 @@ void main() {
 #else
   col = tm(vUv);
 #endif
+  // ADS: shallow depth of field look - the frame's edge goes soft while aiming down sights
+  if (uAds > 0.02) {
+    vec2 dc = (vUv - 0.5) * vec2(uRes.x / uRes.y, 1.0);
+    float bl = smoothstep(0.16, 0.6, length(dc)) * uAds;
+    if (bl > 0.01) {
+      vec3 acc = col; float r = bl * 7.0;
+      for (int i = 0; i < 8; i++) { float a = float(i) * 0.7853982 + 0.3; acc += tm(vUv + vec2(cos(a), sin(a)) * r * px) + tm(vUv + vec2(cos(a + 0.39), sin(a + 0.39)) * r * 0.5 * px); }
+      col = mix(col, acc / 17.0, min(1.0, bl * 1.6));
+    }
+  }
   // cheap bloom from the colour mip chain (only what is brighter than white bleeds)
   // (mip bloom removed: the bright HDR sky bled into the whole frame as haze on 高)
   // grade: slight desaturation, warm highlights, cool shadows, a touch of contrast
@@ -2949,6 +2959,192 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
         setTOD = function (t) { MID2.env.night = TOD[t] && TOD[t].night ? 1 : 0; setTOD0(t); if (MID2.env.rain && !MID2.env.night) loadSky(3); MID2.apply(); };
         MID2.env.night = TOD[TODi] && TOD[TODi].night ? 1 : 0;
         MID2.setWeather(MID2.rain0);
+        // ===================== Realism round 2 / LOW: muzzle smoke, ADS depth blur, bot voice callouts, drifting clouds, floppy deaths =====================
+        const LOW2 = (function () {
+          const tA = new THREE.Vector3(), tB = new THREE.Vector3(), qA = new THREE.Quaternion(), qB = new THREE.Quaternion();
+          // ---------- 12 muzzle smoke: pooled soft sprites that rise, swell and fade ----------
+          const smokeTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 64; const x = c.getContext("2d");
+            for (let k = 0; k < 9; k++) { const px = 22 + Math.random() * 20, py = 22 + Math.random() * 20, r = 12 + Math.random() * 14;
+              const g = x.createRadialGradient(px, py, 0, px, py, r); g.addColorStop(0, "rgba(255,255,255,.35)"); g.addColorStop(1, "rgba(255,255,255,0)"); x.fillStyle = g; x.fillRect(0, 0, 64, 64); }
+            const t = new THREE.CanvasTexture(c); return t; })();
+          const smoke = [];
+          for (let i = 0; i < 48; i++) {
+            const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: smokeTex, color: 0xb8b4ae, transparent: true, depthWrite: false, opacity: 0 }));
+            s.visible = false; s.renderOrder = 5; scene.add(s); smoke.push({ s, t: 0, life: 1, v: new THREE.Vector3(), s0: 0.1, s1: 0.5, op: 0.2 });
+          }
+          let smI = 0;
+          function puff(pos, s0, s1, op, life, vy) {
+            const p = smoke[smI]; smI = (smI + 1) % smoke.length;
+            p.s.position.copy(pos); p.t = 0; p.life = life; p.s0 = s0; p.s1 = s1; p.op = op;
+            p.v.set((Math.random() - 0.5) * 0.25, vy, (Math.random() - 0.5) * 0.25);
+            p.s.material.rotation = Math.random() * 6.283; p.s.visible = true;
+          }
+          function smokeTick(dt) {
+            const lit = MID2.env.night ? 0.35 : MID2.env.rain ? 0.7 : 1;
+            for (const p of smoke) {
+              if (!p.s.visible) continue;
+              p.t += dt; const k = p.t / p.life;
+              if (k >= 1) { p.s.visible = false; continue; }
+              p.v.multiplyScalar(Math.exp(-dt * 1.5)); p.v.y += dt * 0.25; p.s.position.addScaledVector(p.v, dt);
+              p.s.scale.setScalar(p.s0 + (p.s1 - p.s0) * (1 - (1 - k) * (1 - k)));
+              p.s.material.opacity = p.op * (1 - k) * Math.min(1, p.t * 12);
+              p.s.material.color.setScalar(0.72 * lit);
+            }
+          }
+          const _mf = muzzleFlash;
+          muzzleFlash = function () {
+            _mf();
+            const w = W[cur]; if (w.melee) return;
+            pFlash.getWorldPosition(tA); camera.getWorldDirection(tB); tA.addScaledVector(tB, 0.25);
+            puff(tA, 0.05, w.headKill ? 0.6 : 0.35, 0.16, 0.9, 0.18);
+          };
+          const _bf = botFlash;
+          botFlash = function (x, y, z) {
+            _bf(x, y, z); tA.set(x, y, z);
+            if (tA.distanceTo(camera.position) < 60) { puff(tA, 0.15, 0.9, 0.22, 1.2, 0.25); }
+          };
+
+          // ---------- 11 ADS depth blur: soften the edge of the frame while aiming (post pipeline only) ----------
+
+          // ---------- 13 bot voice: CC0 male combat callouts, positional, throttled ----------
+          const VO = "https://cdn.jsdelivr.net/gh/Mcamento8/open-game-sfx-index@main/audio/voiceover-pack/Male/war_";
+          const VOX = { eng: ["target_engaged", "suppressing_fire", "go_go_go"], kill: ["target_destroyed"], hurt: ["look_out", "get_down"], low: ["medic"], spawn: ["cover_me", "watch_my_back", "call_for_backup"] };
+          let voxOn = false, voxCD = 0;
+          function loadVox() {
+            if (voxOn || !actx) return; voxOn = true;
+            for (const k in VOX) { const key = "vo_" + k; sfxB[key] = sfxB[key] || [];
+              for (const f of VOX[k]) fetch(VO + f + ".ogg").then((r) => r.arrayBuffer()).then((a) => actx.decodeAudioData(a)).then((b) => sfxB[key].push(b)).catch(() => {}); }
+          }
+          function say(b, k, chance) {
+            if (!b || b === P || !b.g || voxCD > 0 || (b.voT || 0) > 0 || Math.random() > chance) return;
+            tA.copy(b.g.position); tA.y += 1.6;
+            if (tA.distanceTo(camera.position) > 45) return;
+            if (b.vp === undefined) b.vp = 0.88 + Math.random() * 0.24;
+            playSfx("vo_" + k, 0.55, b.vp, tA.clone());
+            voxCD = 2.5 + Math.random() * 2; b.voT = 8;
+          }
+          const _dmg = damage;
+          damage = function (t, w, by, head) {
+            const died = _dmg(t, w, by, head);
+            if (!died && t !== P) say(t, t.hp < 40 ? "low" : "hurt", 0.35);
+            return died;
+          };
+          const _kill = kill;
+          kill = function (t, by, w, head) {
+            const sp0 = by && by !== t ? posOf(by).clone() : null;
+            _kill(t, by, w, head);
+            if (t !== P) {
+              // ragdoll-ish state: slide away from the shooter, limbs lag behind the fall
+              let dx = 0, dz = 0;
+              if (sp0) { dx = t.g.position.x - sp0.x; dz = t.g.position.z - sp0.z; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l; }
+              t.rg = { dx, dz, v: (head ? 2.4 : 1.6) * (w && w.headKill ? 1.4 : 1), prevA: 0, prevW: 0, arm: [0, 0, 0, 0], head: [0, 0], pa: [0, 0], ph: 0 };
+            }
+            if (by && by !== P && by !== t) say(by, "kill", 0.5);
+          };
+          const _sb = spawnBot;
+          spawnBot = function (b) { _sb(b); b.rg = null; if (playing) say(b, "spawn", 0.15); };
+
+          // ---------- 15 floppy deaths: arms and head lag behind the topple on damped springs, body slides with the hit ----------
+          function findBones(b) {
+            const f = (n) => { let o = null; b.model.traverse((x) => { if (!o && x.isBone && x.name.replace("mixamorig", "").replace(":", "") === n) o = x; }); return o; };
+            b.rdB = { la: f("LeftArm"), ra: f("RightArm"), lf: f("LeftForeArm"), rf: f("RightForeArm"), hd: f("Head"), nk: f("Neck") };
+          }
+          function rotW(bone, axis, d) {
+            if (!bone || !d) return;
+            bone.parent.getWorldQuaternion(qA); qB.setFromAxisAngle(axis, d); qB.premultiply(qA.clone().invert()).multiply(qA); bone.quaternion.premultiply(qB);
+          }
+          const axW = new THREE.Vector3(), rayR = new THREE.Raycaster();
+          function spring(st, i, acc, k, c, dt, lim) {
+            // st[i] = offset, st[i+1] = velocity
+            st[i + 1] += (-k * st[i] - c * st[i + 1] - acc) * dt; st[i] += st[i + 1] * dt;
+            st[i] = Math.max(-lim, Math.min(lim, st[i]));
+          }
+          function ragdollTick(dt) {
+            if (!playing || dt <= 0) return;
+            for (const b of bots) {
+              const g = b.rg; if (!g || !(b.dead > 0) || !b.model) continue;
+              if (!b.rdB || b.rdB.m !== b.model) { findBones(b); b.rdB.m = b.model; }
+              const el = 2.2 - b.dead;
+              // slide (stops at walls)
+              if (g.v > 0.05 && el < 0.8) {
+                const step = g.v * dt; tA.set(b.g.position.x, b.g.position.y + 0.9, b.g.position.z); tB.set(g.dx, 0, g.dz);
+                rayR.set(tA, tB); rayR.far = step + 0.35;
+                if (rayR.intersectObjects(walls, false).length) g.v = 0; else { b.g.position.x += g.dx * step; b.g.position.z += g.dz * step; }
+                g.v *= Math.exp(-dt * 5);
+              }
+              // angular acceleration of the topple drives the springs
+              const a = 2 * Math.acos(Math.min(1, Math.abs(b.rig.quaternion.w)));
+              const w = (a - g.prevA) / dt, acc = (w - g.prevW) / dt; g.prevA = a; g.prevW = w;
+              axW.copy(b.dAx || tB.set(1, 0, 0)).applyQuaternion(b.g.quaternion).normalize();
+              b.g.updateMatrixWorld(true);
+              const A = Math.max(-60, Math.min(60, acc));
+              const o0 = g.arm[0], o1 = g.arm[2], h0 = g.head[0];
+              spring(g.arm, 0, A * 0.9, 60, 7, dt, 1.1);
+              spring(g.arm, 2, A * 1.15, 48, 6, dt, 1.2);
+              spring(g.head, 0, A * 0.7, 80, 9, dt, 0.7);
+              if (el > 1.25) continue; // settled: freeze while fading out
+              rotW(b.rdB.la, axW, g.arm[0] - o0); rotW(b.rdB.lf, axW, (g.arm[0] - o0) * 0.5);
+              rotW(b.rdB.ra, axW, g.arm[2] - o1); rotW(b.rdB.rf, axW, (g.arm[2] - o1) * 0.5);
+              rotW(b.rdB.hd || b.rdB.nk, axW, g.head[0] - h0);
+            }
+          }
+
+          // ---------- 14 drifting clouds: a thin procedural layer over the HDRI sky ----------
+          const cloudMat = new THREE.ShaderMaterial({
+            transparent: true, depthWrite: false, fog: false, side: THREE.BackSide,
+            uniforms: { uT: { value: 0 }, uCover: { value: 0.5 }, uOp: { value: 0.8 }, uSun: { value: new THREE.Vector3(0, 1, 0) }, uLit: { value: new THREE.Color(1.3, 1.28, 1.24) }, uDark: { value: new THREE.Color(0.62, 0.66, 0.72) } },
+            vertexShader: "varying vec3 vD; void main() { vD = normalize(position); vec4 p = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * p; gl_Position.z = gl_Position.w * 0.99999; }",
+            fragmentShader: `
+varying vec3 vD; uniform float uT, uCover, uOp; uniform vec3 uSun, uLit, uDark;
+float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float n(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
+float fbm(vec2 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { s += a * n(p); p = p * 2.03 + 17.1; a *= 0.5; } return s; }
+void main() {
+  if (vD.y < 0.0) discard;
+  vec2 p = vD.xz / (vD.y + 0.15) * 1.6;
+  vec2 w = vec2(uT * 0.012, uT * 0.004);
+  float d = fbm(p + w) * 0.7 + fbm(p * 2.7 - w * 1.7) * 0.3;
+  float dens = smoothstep(1.0 - uCover, 1.0 - uCover + 0.28, d);
+  float shade = smoothstep(0.0, 0.5, fbm(p + w + normalize(uSun.xz + 1e-4) * 0.08) - d + 0.25);
+  float sunGlow = pow(max(0.0, dot(normalize(vD), normalize(uSun))), 6.0);
+  vec3 col = mix(uDark, uLit, shade) + uLit * sunGlow * 0.4;
+  float a = dens * uOp * smoothstep(0.02, 0.22, vD.y);
+  if (a < 0.003) discard;
+  gl_FragColor = vec4(col, a);
+}`,
+          });
+          const dome = new THREE.Mesh(new THREE.SphereGeometry(290, 48, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), cloudMat);
+          dome.frustumCulled = false; dome.renderOrder = -1; scene.add(dome);
+          // [cover, opacity, lit rgb, dark rgb] per sky preset (昼/朝/夕方/曇り/夜)
+          const CLD = [
+            [0.45, 0.75, [1.35, 1.32, 1.26], [0.66, 0.7, 0.78]],
+            [0.4, 0.7, [1.4, 1.18, 0.95], [0.6, 0.58, 0.66]],
+            [0.45, 0.75, [1.5, 0.95, 0.6], [0.45, 0.38, 0.45]],
+            [0.85, 0.55, [0.95, 0.97, 1.0], [0.55, 0.58, 0.62]],
+            [0.5, 0.35, [0.18, 0.2, 0.26], [0.06, 0.07, 0.1]],
+          ];
+          function cloudTick(dt) {
+            const env = MID2.env, t = env.night ? 4 : env.rain ? 3 : Math.min(TODi, 3), c = CLD[t];
+            const U = cloudMat.uniforms; U.uT.value += dt * (env.rain ? 2.2 : 1);
+            U.uCover.value += (c[0] - U.uCover.value) * Math.min(1, dt * 2); U.uOp.value += (c[1] - U.uOp.value) * Math.min(1, dt * 2);
+            U.uLit.value.setRGB(c[2][0], c[2][1], c[2][2]); U.uDark.value.setRGB(c[3][0], c[3][1], c[3][2]);
+            U.uSun.value.copy(SUN_V).normalize();
+            dome.position.copy(camera.position);
+          }
+
+          function tick(dt) {
+            loadVox(); if (voxCD > 0) voxCD -= dt;
+            for (const b of bots) {
+              if (b.voT > 0) b.voT -= dt;
+              const f = !!b.foe && b.dead <= 0;
+              if (f && !b._hadFoe && playing) say(b, "eng", 0.35);
+              b._hadFoe = f;
+            }
+            smokeTick(dt); ragdollTick(dt); cloudTick(dt);
+            postMat.uniforms.uAds.value = scoped ? 0 : ads;
+          }
+          return { tick, puff };
+        })();
         function loop() {
           requestAnimationFrame(loop);
           const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
@@ -3018,7 +3214,7 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
           if (sc !== scoped) { scoped = sc; $("x-scope").classList.toggle("is-on", sc); $("x-hud").classList.toggle("is-scoped", sc); }
           gun.visible = !scoped && !P.dead;
           updateArms();
-          MID2.tick(dt);
+          MID2.tick(dt); LOW2.tick(dt);
           // Speed lines
           const sl = live ? Math.max(0, Math.min(1, (sp - 12.5) / 5)) * 0.6 : 0;
           if (Math.abs(sl - speedOp) > 0.01) { speedOp = sl; speedEl.style.opacity = sl.toFixed(2); }
