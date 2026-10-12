@@ -754,7 +754,7 @@
               if (vis && c.lod) vis = c.lod === 1 ? d < 48 : d >= 48;
               for (let j = 0; j < c.ims.length; j++) c.ims[j].visible = vis;
             }
-            cam.getWorldDirection(SHD); SHD.y = 0; if (SHD.lengthSq() > 1e-6) SHD.normalize(); const sx = Math.round((px + SHD.x * 20) * 2) / 2, sz = Math.round((pz + SHD.z * 20) * 2) / 2;
+            cam.getWorldDirection(SHD); SHD.y = 0; if (SHD.lengthSq() > 1e-6) SHD.normalize(); const sx = Math.round((px + SHD.x * 20) / 4) * 4, sz = Math.round((pz + SHD.z * 20) / 4) * 4;
             sun.target.position.set(sx, 0, sz); sun.position.set(sx + SUN.x, SUN.y, sz + SUN.z); sun.target.updateMatrixWorld();
             const fc = scene.fog.color, mx = Math.max(fc.r, fc.g, fc.b); if (mx > 0.6) fc.multiplyScalar(0.6 / mx);
           };
@@ -2602,9 +2602,9 @@ void main() {
     vec2 dc = (vUv - 0.5) * vec2(uRes.x / uRes.y, 1.0);
     float bl = smoothstep(0.16, 0.6, length(dc)) * uAds;
     if (bl > 0.01) {
-      vec3 acc = col; float r = bl * 7.0;
-      for (int i = 0; i < 8; i++) { float a = float(i) * 0.7853982 + 0.3; acc += tm(vUv + vec2(cos(a), sin(a)) * r * px) + tm(vUv + vec2(cos(a + 0.39), sin(a + 0.39)) * r * 0.5 * px); }
-      col = mix(col, acc / 17.0, min(1.0, bl * 1.6));
+      vec3 acc = texture2D(tColor, vUv).rgb; float r = bl * 7.0;
+      for (int i = 0; i < 8; i++) { float a = float(i) * 0.7853982 + 0.3; acc += texture2D(tColor, vUv + vec2(cos(a), sin(a)) * r * (i < 4 ? 1.0 : 0.55) * px).rgb; }
+      col = mix(col, aces(acc / 9.0), min(1.0, bl * 1.6));
     }
   }
   // cheap bloom from the colour mip chain (only what is brighter than white bleeds)
@@ -2630,6 +2630,7 @@ void main() {
           if (postRT) { if (postRT.depthTexture) postRT.depthTexture.dispose(); postRT.dispose(); postRT = null; }
           postQ = Q;
           if (Q === 0) { renderer.toneMapping = THREE.ACESFilmicToneMapping; return; }
+          renderer.toneMapping = THREE.NoToneMapping;
           const rt = new THREE.WebGLRenderTarget(postSize.x, postSize.y, {
             type: THREE.HalfFloatType, format: THREE.RGBAFormat, samples: 4,
             minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: true, depthBuffer: true,
@@ -2653,7 +2654,7 @@ void main() {
           Q = POST_OK ? q : 0; try { localStorage.setItem("krunkQ", String(Q)); } catch (e) {}
           document.querySelectorAll(".x-q").forEach((b) => b.classList.toggle("is-on", +b.dataset.q === Q));
           const ms = Q === 2 && renderer.capabilities.maxTextureSize >= 8192 ? 4096 : Q === 0 ? 1024 : 2048;
-          const pr = Q === 2 ? Math.min(devicePixelRatio, 2) : Math.min(devicePixelRatio, 1.25);
+          const pr = Q === 2 ? (devicePixelRatio >= 2 ? 1.75 : devicePixelRatio) : Math.min(devicePixelRatio, 1.25);
           if (pr !== pixR) { pixR = pr; renderer.setPixelRatio(pixR); resize(); }
           if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
         }
@@ -2996,7 +2997,7 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
             _mf();
             const w = W[cur]; if (w.melee) return;
             pFlash.getWorldPosition(tA); camera.getWorldDirection(tB); tA.addScaledVector(tB, 0.25);
-            puff(tA, 0.05, w.headKill ? 0.6 : 0.35, 0.16, 0.9, 0.18);
+            puff(tA, 0.04, w.headKill ? 0.4 : 0.22, 0.12, 0.6, 0.18);
           };
           const _bf = botFlash;
           botFlash = function (x, y, z) {
@@ -3090,15 +3091,25 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
           }
 
           // ---------- 14 drifting clouds: a thin procedural layer over the HDRI sky ----------
+          const cloudTex = (() => {
+            const N = 256, P0 = 8, data = new Uint8Array(N * N * 4);
+            const hs = (x, y, p) => { x = ((x % p) + p) % p; y = ((y % p) + p) % p; const v = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return v - Math.floor(v); };
+            const vn = (x, y, p) => { const ix = Math.floor(x), iy = Math.floor(y); let fx = x - ix, fy = y - iy; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+              const a = hs(ix, iy, p), b = hs(ix + 1, iy, p), c = hs(ix, iy + 1, p), d = hs(ix + 1, iy + 1, p); return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy; };
+            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+              let s = 0, a = 0.5, f = 1;
+              for (let o = 0; o < 5; o++) { s += a * vn(x / N * P0 * f + o * 17, y / N * P0 * f + o * 17, P0 * f); a *= 0.5; f *= 2; }
+              const i = (y * N + x) * 4; data[i] = data[i + 1] = data[i + 2] = Math.round(s * 255); data[i + 3] = 255;
+            }
+            const t = new THREE.DataTexture(data, N, N); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.needsUpdate = true; return t;
+          })();
           const cloudMat = new THREE.ShaderMaterial({
             transparent: true, depthWrite: false, fog: false, side: THREE.BackSide,
-            uniforms: { uT: { value: 0 }, uCover: { value: 0.5 }, uOp: { value: 0.8 }, uSun: { value: new THREE.Vector3(0, 1, 0) }, uLit: { value: new THREE.Color(1.3, 1.28, 1.24) }, uDark: { value: new THREE.Color(0.62, 0.66, 0.72) } },
+            uniforms: { tN: { value: cloudTex }, uT: { value: 0 }, uCover: { value: 0.5 }, uOp: { value: 0.8 }, uSun: { value: new THREE.Vector3(0, 1, 0) }, uLit: { value: new THREE.Color(1.3, 1.28, 1.24) }, uDark: { value: new THREE.Color(0.62, 0.66, 0.72) } },
             vertexShader: "varying vec3 vD; void main() { vD = normalize(position); vec4 p = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * p; gl_Position.z = gl_Position.w * 0.99999; }",
             fragmentShader: `
-varying vec3 vD; uniform float uT, uCover, uOp; uniform vec3 uSun, uLit, uDark;
-float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float n(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
-float fbm(vec2 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { s += a * n(p); p = p * 2.03 + 17.1; a *= 0.5; } return s; }
+varying vec3 vD; uniform float uT, uCover, uOp; uniform vec3 uSun, uLit, uDark; uniform sampler2D tN;
+float fbm(vec2 p) { return texture2D(tN, p * 0.125).r; }
 void main() {
   if (vD.y < 0.0) discard;
   vec2 p = vD.xz / (vD.y + 0.15) * 1.6;
@@ -3144,6 +3155,138 @@ void main() {
             postMat.uniforms.uAds.value = scoped ? 0 : ads;
           }
           return { tick, puff };
+        })();
+        // ===================== Perf pass (same look): shadow cache, outer-city occlusion culling + impostors =====================
+        const LOW3 = (function () {
+          // ---------- shadow cache: static casters only re-rendered when the shadow frustum moves; otherwise every 2nd frame (moving bots) ----------
+          renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
+          let shF = 0; const shLast = new THREE.Vector3(1e9, 0, 0), shSun = new THREE.Vector3();
+          // ---------- occlusion: inner-town heightmap (1 m cells) blocks sight lines to the outer ring chunks ----------
+          const HG = 64, HN = HG * 2; const hmap = new Float32Array(HN * HN).fill(-1);
+          for (const b of blocks) {
+            const t = b.max.y; if (t - b.min.y > 25 || b.max.x - b.min.x > 60 || b.max.z - b.min.z > 60) continue;
+            if (b.max.x - b.min.x < 0.6 || b.max.z - b.min.z < 0.6) continue;   // thin rails/poles do not hide anything
+            const x0 = Math.max(0, Math.ceil(b.min.x + HG)), x1 = Math.min(HN - 1, Math.floor(b.max.x + HG) - 1);
+            const z0 = Math.max(0, Math.ceil(b.min.z + HG)), z1 = Math.min(HN - 1, Math.floor(b.max.z + HG) - 1);
+            for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) { const i = z * HN + x; if (t > hmap[i]) hmap[i] = t; }
+          }
+          const hAt = (x, z) => { const ix = Math.floor(x + HG), iz = Math.floor(z + HG); return ix < 0 || iz < 0 || ix >= HN || iz >= HN ? null : hmap[iz * HN + ix]; };
+          function clear(ox, oy, oz, tx, ty, tz) {
+            const dx = tx - ox, dz = tz - oz, L = Math.hypot(dx, dz), n = Math.ceil(L / 0.8);
+            let inside = true;
+            for (let i = 1; i < n; i++) {
+              const k = i / n, x = ox + dx * k, z = oz + dz * k, h = hAt(x, z);
+              if (h === null) { if (Math.abs(x) > HG + 1 || Math.abs(z) > HG + 1) return true; continue; }
+              const ry = oy + (ty - oy) * k;
+              if (inside) { if (h > oy) continue; inside = false; }   // camera inside a block/roof footprint: skip until out
+              if (h > ry + 0.4) return false;
+            }
+            return true;
+          }
+          // outer cells (chunks outside the 120 m play area) gathered lazily from KCH
+          const cells = new Map(); let kchSeen = 0, stableT = 0;
+          const tmpV = new THREE.Vector3(), M = new THREE.Matrix4(), BB = new THREE.Box3();
+          function gather() {
+            for (let i = kchSeen; i < KCH.length; i++) {
+              const c = KCH[i]; if (Math.abs(c.x) <= 60 && Math.abs(c.z) <= 60) continue;
+              const k = c.x + "," + c.z; let cell = cells.get(k);
+              if (!cell) { cell = { x: c.x, z: c.z, ch: [], vis: true, hid: 0, imp: null, box: null }; cells.set(k, cell); }
+              cell.ch.push(c); cell.box = null;
+            }
+            kchSeen = KCH.length;
+          }
+          function boxOf(cell) {
+            if (cell.box) return cell.box;
+            const b = new THREE.Box3();
+            for (const c of cell.ch) { if (c.lod === 1 || c.maxD) continue;
+              for (const im of c.ims) { if (!im.geometry.boundingBox) im.geometry.computeBoundingBox();
+                for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, M); BB.copy(im.geometry.boundingBox).applyMatrix4(M); b.union(BB); } } }
+            cell.box = b.isEmpty() ? null : b; return cell.box;
+          }
+          const cellList = []; let rr = 0;
+          function occTest(cell, cam, ahead) {
+            const b = boxOf(cell); if (!b) return true;
+            const top = b.max.y + 1, ox = cam.x, oy = cam.y, oz = cam.z;
+            for (let gx = 0; gx <= 2; gx++) for (let gz = 0; gz <= 2; gz++) {
+              const tx = b.min.x + (b.max.x - b.min.x) * gx / 2, tz = b.min.z + (b.max.z - b.min.z) * gz / 2;
+              if (clear(ox, oy, oz, tx, top, tz) || clear(ahead.x, ahead.y, ahead.z, tx, top, tz)) return true;
+            }
+            return false;
+          }
+          // ---------- impostors: each outer cell baked to a camera-facing card (re-baked when time of day / weather changes) ----------
+          const IMP_D = 95;
+          let bakeAt = -1, bakeKey = "", bakeN = 0;
+          function bake() {
+            const prevRT = renderer.getRenderTarget(), prevTM = renderer.toneMapping, prevBg = scene.background, prevFog = scene.fog;
+            const cc = new THREE.Color(); renderer.getClearColor(cc); const ca = renderer.getClearAlpha();
+            const saved = scene.children.map((o) => o.visible);
+            scene.background = null; const fN = prevFog ? prevFog.near : 0, fF = prevFog ? prevFog.far : 0; if (prevFog) { prevFog.near = 1e5; prevFog.far = 2e5; } renderer.setClearColor(0x000000, 0);
+            for (const o of scene.children) o.visible = !!o.isLight;
+            const oc = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 400);
+            for (const cell of cells.values()) {
+              const b = boxOf(cell); if (!b) continue;
+              const L = Math.hypot(cell.x, cell.z) || 1, d = tmpV.set(cell.x / L, 0, cell.z / L), rx = -d.z, rz = d.x;
+              let sMin = 1e9, sMax = -1e9, tMin = 1e9, tMax = -1e9;
+              for (let i = 0; i < 8; i++) { const x = i & 1 ? b.max.x : b.min.x, z = i & 2 ? b.max.z : b.min.z;
+                const s = (x - cell.x) * rx + (z - cell.z) * rz, t = (x - cell.x) * d.x + (z - cell.z) * d.z;
+                sMin = Math.min(sMin, s); sMax = Math.max(sMax, s); tMin = Math.min(tMin, t); tMax = Math.max(tMax, t); }
+              const W0 = sMax - sMin, H0 = b.max.y - b.min.y; if (W0 < 1 || H0 < 1) continue;
+              oc.left = sMin; oc.right = sMax; oc.bottom = b.min.y; oc.top = b.max.y; oc.near = 100 - tMax - 1; oc.far = 100 - tMin + 1; oc.updateProjectionMatrix();
+              oc.position.set(cell.x - d.x * 100, 0, cell.z - d.z * 100); oc.lookAt(cell.x, 0, cell.z); oc.updateMatrixWorld();
+              const pw = 512, ph = Math.max(64, Math.min(1024, Math.round(512 * H0 / W0 / 32) * 32));
+              if (!cell.imp) {
+                const rt = new THREE.WebGLRenderTarget(pw, ph, { type: THREE.HalfFloatType, format: THREE.RGBAFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+                const g = new THREE.PlaneGeometry(W0, H0); g.translate((sMin + sMax) / 2, (b.min.y + b.max.y) / 2, 0);
+                const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: rt.texture, alphaTest: 0.5, side: THREE.DoubleSide, toneMapped: false }));
+                mesh.position.set(cell.x, 0, cell.z); mesh.visible = false; mesh.frustumCulled = false; scene.add(mesh); saved.push(false);
+                cell.imp = { rt, mesh };
+              }
+              for (const c of cell.ch) for (const im of c.ims) im.visible = c.lod !== 1 && !c.maxD;
+              renderer.setRenderTarget(cell.imp.rt); renderer.clear(); renderer.render(scene, oc);
+              for (const c of cell.ch) for (const im of c.ims) im.visible = false;
+            }
+            scene.children.forEach((o, i) => { o.visible = saved[i]; });
+            renderer.setRenderTarget(prevRT); scene.background = prevBg; if (prevFog) { prevFog.near = fN; prevFog.far = fF; } renderer.setClearColor(cc, ca);
+            renderer.shadowMap.needsUpdate = true; bakeN++;
+          }
+          const ahead = new THREE.Vector3();
+          const ob = scene.onBeforeRender;
+          scene.onBeforeRender = (r, s, cam) => {
+            ob(r, s, cam);
+            if (cam !== camera) return;
+            // shadow cache
+            shF++;
+            if (shLast.distanceToSquared(sun.target.position) > 1e-4 || !shSun.equals(SUN_V) || (shF & 1) === 0) {
+              renderer.shadowMap.needsUpdate = true; shLast.copy(sun.target.position); shSun.copy(SUN_V);
+            }
+            // outer cells: occlusion (round robin, 6 per frame) + impostor swap
+            if (!cellList.length && cells.size) cellList.push(...cells.values());
+            if (cellList.length) {
+              ahead.copy(cam.position); if (typeof P !== "undefined" && P.vel) { ahead.x += P.vel.x * 0.3; ahead.z += P.vel.z * 0.3; }
+              for (let n = 0; n < Math.min(6, cellList.length); n++) {
+                const cell = cellList[rr = (rr + 1) % cellList.length];
+                if (occTest(cell, cam.position, ahead)) { cell.vis = true; cell.hid = 0; } else if (++cell.hid >= 2) cell.vis = false;
+              }
+              for (const cell of cellList) {
+                const d = Math.hypot(cell.x - cam.position.x, cell.z - cam.position.z);
+                const useImp = !!(cell.imp && bakeN > 0 && d > IMP_D);
+                if (!cell.vis || useImp) for (const c of cell.ch) for (const im of c.ims) im.visible = false;
+                if (cell.imp) { const m = cell.imp.mesh; m.visible = cell.vis && useImp; if (m.visible) m.rotation.y = Math.atan2(cam.position.x - cell.x, cam.position.z - cell.z); }
+              }
+            }
+          };
+          function tick(dt) {
+            if (KCH.length !== kchSeen) { gather(); stableT = 0; cellList.length = 0; for (const c of cells.values()) c.box = null; }
+            else stableT += dt;
+            const env = MID2.env, key = Q + "|" + TODi + "|" + (env.rain ? 1 : 0) + "|" + env.night;
+            if (stableT > 3 && cells.size) {
+              if (bakeN === 0 && bakeAt < 0) bakeAt = 0;
+              if (key !== bakeKey && bakeN > 0 && bakeAt < 0) bakeAt = 3;   // sky/lighting changed: re-bake once the new HDRI is in
+              if (bakeN === 1 && bakeAt < 0 && stableT > 12) bakeAt = 0;     // second pass after the late textures arrive
+            }
+            if (bakeAt >= 0 && (bakeAt -= dt) <= 0) { bakeAt = -1; bakeKey = key; bake(); }
+          }
+          return { tick };
         })();
         function loop() {
           requestAnimationFrame(loop);
@@ -3214,7 +3357,7 @@ void main() {
           if (sc !== scoped) { scoped = sc; $("x-scope").classList.toggle("is-on", sc); $("x-hud").classList.toggle("is-scoped", sc); }
           gun.visible = !scoped && !P.dead;
           updateArms();
-          MID2.tick(dt); LOW2.tick(dt);
+          MID2.tick(dt); LOW2.tick(dt); LOW3.tick(dt);
           // Speed lines
           const sl = live ? Math.max(0, Math.min(1, (sp - 12.5) / 5)) * 0.6 : 0;
           if (Math.abs(sl - speedOp) > 0.01) { speedOp = sl; speedEl.style.opacity = sl.toFixed(2); }
