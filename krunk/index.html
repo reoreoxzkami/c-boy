@@ -2598,8 +2598,7 @@ void main() {
   col = tm(vUv);
 #endif
   // cheap bloom from the colour mip chain (only what is brighter than white bleeds)
-  vec3 hb = textureLod(tColor, vUv, 3.0).rgb * 0.5 + textureLod(tColor, vUv, 5.0).rgb * 0.5;
-  col += aces(max(hb * uExpo / 0.6 - 2.2, 0.0)) * 0.12;
+  // (mip bloom removed: the bright HDR sky bled into the whole frame as haze on 高)
   // grade: slight desaturation, warm highlights, cool shadows, a touch of contrast
   float L = lum(col);
   col = mix(vec3(L), col, 0.88);
