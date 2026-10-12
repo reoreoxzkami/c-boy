@@ -737,8 +737,8 @@
         // ---------- performance: chunk culling + distance LOD, shadows that follow the player, honest fog ----------
         const KCH = [], KCH_SIZE = 32;
         pixR = Math.min(pixR, 1.25); renderer.setPixelRatio(pixR); resize();
-        camera.far = 260; camera.updateProjectionMatrix();
-        scene.fog.near = 70; scene.fog.far = 235;
+        camera.far = 340; camera.updateProjectionMatrix();
+        scene.fog.near = 130; scene.fog.far = 330;
         renderer.shadowMap.type = THREE.PCFShadowMap; renderer.toneMappingExposure = 0.9;
         shCam.left = -46; shCam.right = 46; shCam.top = 46; shCam.bottom = -46; shCam.near = 1; shCam.far = 240; shCam.updateProjectionMatrix();
         (function () {
@@ -2573,7 +2573,7 @@ void main() {
   vec3 rA = 0.5 * (tm(vUv + dir * (1.0 / 3.0 - 0.5)) + tm(vUv + dir * (2.0 / 3.0 - 0.5)));
   vec3 rB = rA * 0.5 + 0.25 * (tm(vUv - dir * 0.5) + tm(vUv + dir * 0.5));
   float lB = lum(rB);
-  col = (lB < lMin || lB > lMax) ? rA : rB;
+  col = cM;
   // depth-only ambient occlusion (SAO-style spiral, 12 taps)
   vec3 P = viewPos(vUv);
   float ao = 1.0;
@@ -2601,9 +2601,9 @@ void main() {
   // (mip bloom removed: the bright HDR sky bled into the whole frame as haze on 高)
   // grade: slight desaturation, warm highlights, cool shadows, a touch of contrast
   float L = lum(col);
-  col = mix(vec3(L), col, 0.88);
+  col = mix(vec3(L), col, 1.04);
   col *= mix(vec3(0.96, 0.99, 1.04), vec3(1.04, 1.0, 0.95), smoothstep(0.1, 0.7, L));
-  col = clamp((col - 0.5) * 1.06 + 0.5, 0.0, 1.0);
+  col = clamp((col - 0.5) * 1.1 + 0.5, 0.0, 1.0);
   // vignette
   vec2 d = vUv - 0.5; col *= 1.0 - 0.32 * smoothstep(0.25, 0.85, dot(d, d) * 2.2);
   // linear -> sRGB
@@ -2886,7 +2886,7 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
             for (const m of signMats) m.emissiveIntensity = m.userData.sign ? (n ? 2.6 : TODi === 2 || TODi === 3 || rn ? 0.9 : 0.35) : (n ? 1.15 : TODi === 2 || rn ? 0.35 : 0.1);
             glowMat.opacity = n ? 0.95 : TODi === 2 ? 0.35 : 0;
             rain.visible = rn;
-            scene.fog.near = rn ? 28 : W0.fogN; scene.fog.far = rn ? 150 : W0.fogF;
+            scene.fog.near = rn ? 55 : W0.fogN; scene.fog.far = rn ? 230 : W0.fogF;
             if (rn) { sun.intensity = Math.min(sun.intensity, n ? 0.08 : 0.32); if (hemiL) hemiL.intensity = n ? 0.08 : 0.5; }
             lightsInScene(n || TODi === 2); wet(rn); rainAudio(rn);
           }
