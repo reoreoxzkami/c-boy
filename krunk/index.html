@@ -179,6 +179,8 @@
       .x-keys dd { color: rgba(255,255,255,.75); }
       .x-panel .x-killer { font: 28px/1.2 "Russo One", sans-serif; color: #fff; }
       .x-killer em { font-style: normal; color: #ff5a4a; }
+      .x-killer .x-kinfo { display: block; font: 14px/1.4 var(--sans), sans-serif; color: rgba(255,255,255,.75); margin-top: 4px; }
+      .x-over--death .x-panel { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(14,16,26,.8); }
       .x-panel .x-eyebrow { font: 14px/1 "Russo One", sans-serif; letter-spacing: .12em; color: var(--x-gold); }
       #x-end h1 { font: 52px/1 "Russo One", sans-serif; color: #fff6d6; text-shadow: 0 3px 0 #ffa31a, 0 6px 0 #d64a00, 0 14px 20px rgba(0,0,0,.6); margin: 8px 0 10px; }
       .x-res div { background: rgba(255,255,255,.08); }
@@ -2001,10 +2003,10 @@ diffuseColor *= tpc;
         const death = $("x-death");
         function playerDie(by, w) {
           P.dead = true; P.deadT = 2.2; mouseDown = false; scopeDown = false; P.reload = 0;
-          $("x-killer").innerHTML = by && by !== P ? `<em>${by.name}</em> [${w.name}] に倒された` : "倒された";
+          P.killer = by && by !== P ? by : null;
+          $("x-killer").innerHTML = P.killer ? `<em>${by.name}</em> [${w.name}] に倒された<small class="x-kinfo">残りHP ${Math.max(0, Math.ceil(by.hp))} · ${Math.round(Math.hypot(by.g.position.x - P.pos.x, by.g.position.z - P.pos.z))}m</small>` : "倒された";
           $("x-msg").style.display = "none"; msgT = 0;
           syncCards(); death.hidden = false; hud();
-          if (document.pointerLockElement) { try { document.exitPointerLock(); } catch (e) {} }
         }
         function chooseClass(i, now) {
           P.nextCls = i; syncCards();
@@ -3411,7 +3413,15 @@ void main() {
             P.deadT -= dt;
             $("x-respawn").textContent = `${Math.max(0, P.deadT).toFixed(1)}秒後にリスポーン · クラスを選ぶとすぐ復活（1 / 2 / 3）`;
             if (P.deadT <= 0) respawnPlayer();
-            camera.position.set(P.pos.x, P.pos.y + 0.5, P.pos.z); camera.rotation.set(pitch, yaw, 0);
+            // kill cam: turn to face whoever got you
+            const kb = P.killer;
+            if (kb && kb.g) {
+              const kx = kb.g.position.x - P.pos.x, kz = kb.g.position.z - P.pos.z, ky = kb.g.position.y + 1.4 - (P.pos.y + 1.1);
+              const ty = Math.atan2(-kx, -kz), tp = Math.max(-1.2, Math.min(1.2, Math.atan2(ky, Math.hypot(kx, kz))));
+              let dy = ty - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+              const k = Math.min(1, dt * 7); yaw += dy * k; pitch += (tp - pitch) * k;
+            }
+            camera.position.set(P.pos.x, P.pos.y + 1.1, P.pos.z); camera.rotation.set(pitch, yaw, 0);
           } else if (playing) {
             updatePlayer(dt);
             if (regen(P, dt)) hud();
