@@ -478,7 +478,7 @@
         const mapMeshStart = scene.children.length;
         function rbox(x0, y0, z0, x1, y1, z1, mat, o) { if (x1 - x0 < 0.01 || y1 - y0 < 0.01 || z1 - z0 < 0.01) return; box((x0 + x1) / 2, y0, (z0 + z1) / 2, x1 - x0, y1 - y0, z1 - z0, mat, o || {}); }
         // ---------- kit catalogue: id on cdn.3dassets.dev, nodes to hide, local collision boxes [x0,y0,z0,x1,y1,z1] (+Z = front) ----------
-        const KCDN = (id) => "https://cdn.3dassets.dev/assets/" + id + "/v1/model.glb";
+        const KCDN = (id) => "https://reoreoxzkami.github.io/c-boy/krunk/assets/k/" + id + ".glb";
         const WALLC = [[-2, 0, -0.2, 2, 3.5, 0.2]];
         const gapWall = (gx0, gx1, gy0, gy1, t = 0.22) => [[-2, 0, -t, gx0, 3.5, t], [gx1, 0, -t, 2, 3.5, t], [gx0, 0, -t, gx1, gy0, t], [gx0, gy1, -t, gx1, 3.5, t]].filter((b) => b[3] - b[0] > 0.01 && b[4] - b[1] > 0.01);
         const STAIRC = []; for (let i = 0; i < 10; i++) STAIRC.push([-0.72, 0, -2.09 + 0.419 * i, 0.72, 0.352 * (i + 1), -2.09 + 0.419 * (i + 1)]);
@@ -2475,13 +2475,13 @@ diffuseColor *= tpc;
 
         // Weapons (damage in HP; headshots x2, sniper headshot always kills)
         // Weapon models: realistic CC0 GLBs from 3dassets.dev (real-world meters, materials only)
-        const GUN_BASE = "https://cdn.3dassets.dev/assets/";
+        const GUN_BASE = "https://reoreoxzkami.github.io/c-boy/krunk/assets/k/";
         const W = [
-          { name: "AR", url: GUN_BASE + "19436/v1/model.glb", size: 0.72, real: 0.85, mag: 30, ammo: 30, rate: 0.1, reload: 1.5, dmg: 22, spread: 0, kick: 0.008, vkick: 1, sound: 0, snd: "ar", auto: true, spd: 1 },
-          { name: "Sniper", url: GUN_BASE + "19438/v1/model.glb", size: 0.9, real: 1.1, mag: 3, ammo: 3, rate: 1.2, reload: 2.2, dmg: 100, headKill: true, spread: 0.12, kick: 0.07, vkick: 2.5, sound: 1, snd: "sniper", auto: false, spd: 0.92 },
-          { name: "Pistol", url: GUN_BASE + "19434/v1/model.glb", size: 0.26, real: 0.21, mag: 10, ammo: 10, rate: 0.14, reload: 1.1, dmg: 25, spread: 0.01, kick: 0.02, vkick: 1.4, sound: 0, snd: "pistol", auto: false, spd: 1.05 },
+          { name: "AR", url: GUN_BASE + "19436.glb", size: 0.72, real: 0.85, mag: 30, ammo: 30, rate: 0.1, reload: 1.5, dmg: 22, spread: 0, kick: 0.008, vkick: 1, sound: 0, snd: "ar", auto: true, spd: 1 },
+          { name: "Sniper", url: GUN_BASE + "19438.glb", size: 0.9, real: 1.1, mag: 3, ammo: 3, rate: 1.2, reload: 2.2, dmg: 100, headKill: true, spread: 0.12, kick: 0.07, vkick: 2.5, sound: 1, snd: "sniper", auto: false, spd: 0.92 },
+          { name: "Pistol", url: GUN_BASE + "19434.glb", size: 0.26, real: 0.21, mag: 10, ammo: 10, rate: 0.14, reload: 1.1, dmg: 25, spread: 0.01, kick: 0.02, vkick: 1.4, sound: 0, snd: "pistol", auto: false, spd: 1.05 },
           { name: "Knife", url: "https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0@main/addons/kaykit_character_pack_adventures/Assets/gltf/dagger.gltf", size: 0.4, melee: true, mag: 0, ammo: 0, rate: 0.42, dmg: 50, range: 2.5, auto: true, spd: 1.15, tilt: -0.6, tint: 0x8b7a66 },
-          { name: "SMG", url: GUN_BASE + "19433/v1/model.glb", size: 0.56, real: 0.65, mag: 24, ammo: 24, rate: 0.055, reload: 1.3, dmg: 15, spread: 0.022, kick: 0.005, vkick: 0.7, sound: 0, snd: "smg", auto: true, spd: 1.05 },
+          { name: "SMG", url: GUN_BASE + "19433.glb", size: 0.56, real: 0.65, mag: 24, ammo: 24, rate: 0.055, reload: 1.3, dmg: 15, spread: 0.022, kick: 0.005, vkick: 0.7, sound: 0, snd: "smg", auto: true, spd: 1.05 },
         ];
         // Classes: primary weapon, HP, move speed, and how bots of this class shoot
         const CL = [
