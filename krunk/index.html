@@ -1146,7 +1146,7 @@ diffuseColor *= tpc;
           camera.rotation.set(pitch, yaw, 0);
         }
         function respawnPlayer() {
-          P.dead = false; $("x-death").hidden = true;
+          P.dead = false; $("x-death").hidden = true; kickBack = 0;
           P.cls = P.nextCls; const c = CL[P.cls];
           P.max = c.hp; P.hp = c.hp; P.hurtT = 99; P.prot = 1.5;
           swapT = 0; W[cur].vm.visible = false; primary = cur = c.wep; W[cur].vm.visible = true;
@@ -1333,7 +1333,7 @@ diffuseColor *= tpc;
           if (!playing || swapT > 0 || i === cur) return false;
           W[cur].ammo = P.ammo; P.reload = 0; swapTo = i; swapT = SWAP; return true;
         }
-        let recoil = 0;
+        let recoil = 0, kickBack = 0, kickWait = 0;
 
         // Audio
         // Gunshots: real CC0 recordings (Free Firearm Sound Library), inlined as base64 and decoded without fetch
@@ -2398,7 +2398,7 @@ diffuseColor *= tpc;
           if (w.melee) { melee(w); return; }
           if (P.ammo <= 0) { startReload(); return; }
           const steady = crouchKey() && P.slide <= 0 ? 0.55 : 1;
-          P.ammo--; P.shots++; P.prot = 0; P.cd = w.rate; recoil = w.vkick; pitch = Math.min(1.5, pitch + w.kick * steady); flash.intensity = 2.5;
+          P.ammo--; P.shots++; P.prot = 0; P.cd = w.rate; recoil = w.vkick; { const pk = Math.min(1.5, pitch + w.kick * steady) - pitch; pitch += pk; if (cur === 1) { kickBack += pk; kickWait = 0.07; } } flash.intensity = 2.5;
           if (w.sound) yaw += (Math.random() - 0.5) * 0.02 * steady;
           shake = Math.max(shake, w.sound ? 0.05 : cur === 2 ? 0.012 : 0.009); punch = Math.min(0.06, punch + 0.004 + w.vkick * 0.005); if (cur === 1) boltT = 0.6;
           playShot(w.sound ? 0.6 : cur === 2 ? 0.45 : 0.5, w.snd);
@@ -3445,6 +3445,7 @@ void main() {
           roll += ((live && P.slide > 0 ? 0.105 : 0) - roll) * Math.min(1, dt * 10);
           shake *= Math.exp(-dt * 12); if (shake < 1e-4) shake = 0;
           punch *= Math.exp(-dt * 16); if (punch < 1e-4) punch = 0;
+          if (kickBack > 0) { if (kickWait > 0) kickWait -= dt; else { const d = Math.min(kickBack, kickBack * Math.min(1, dt * 9) + dt * 0.02); pitch -= d; kickBack -= d; } }
           { const lat = live ? P.vel.x * Math.cos(yaw) - P.vel.z * Math.sin(yaw) : 0; tilt += (Math.max(-0.014, Math.min(0.014, -lat * 0.0013)) - tilt) * Math.min(1, dt * 8); }
           camSave.copy(camera.position);
           const rx = camera.rotation.x, ry = camera.rotation.y, rz = camera.rotation.z;
