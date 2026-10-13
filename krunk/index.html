@@ -68,6 +68,14 @@
       .x-scope::before { width: 68vmin; height: 1px; }
       .x-scope::after { width: 1px; height: 68vmin; }
       .x-hud.is-scoped .x-cross { display: none; }
+      .x-spr { position: absolute; left: 50%; top: 50%; width: 0; height: 0; opacity: 0; transition: opacity .12s; --r: 20px; }
+      .x-spr.is-on { opacity: .9; }
+      .x-hud.is-scoped .x-spr { display: none; }
+      .x-spr i { position: absolute; background: #fff; box-shadow: 0 0 2px rgba(0,0,0,.9); }
+      .x-spr i:nth-child(1) { width: 2px; height: 8px; left: -1px; top: calc(-1 * var(--r) - 8px); }
+      .x-spr i:nth-child(2) { width: 2px; height: 8px; left: -1px; top: var(--r); }
+      .x-spr i:nth-child(3) { width: 8px; height: 2px; top: -1px; left: calc(-1 * var(--r) - 8px); }
+      .x-spr i:nth-child(4) { width: 8px; height: 2px; top: -1px; left: var(--r); }
       .x-panel { max-height: calc(100vh - 32px); overflow-y: auto; }
       .x-board { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 4; min-width: 320px; background: rgba(0,0,0,.6); backdrop-filter: blur(var(--hark-blur, 12px)); border-radius: var(--r-l); padding: 20px 28px; color: #fff; font-family: var(--sans), "Hiragino Sans", "Noto Sans JP", sans-serif; pointer-events: none; }
       .x-board[hidden] { display: none; }
@@ -202,6 +210,7 @@
         <svg class="x-arc" viewBox="0 0 140 140" aria-hidden="true"><path d="M43 16 A60 60 0 0 1 97 16" fill="none" stroke="#ff3b30" stroke-width="7" stroke-linecap="round"/><path d="M62 4 L70 -2 L78 4" fill="none" stroke="#ff3b30" stroke-width="4" stroke-linejoin="round"/></svg>
         <svg class="x-arc" viewBox="0 0 140 140" aria-hidden="true"><path d="M43 16 A60 60 0 0 1 97 16" fill="none" stroke="#ff3b30" stroke-width="7" stroke-linecap="round"/><path d="M62 4 L70 -2 L78 4" fill="none" stroke="#ff3b30" stroke-width="4" stroke-linejoin="round"/></svg>
       </div>
+      <div class="x-spr" id="x-spr" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
       <svg class="x-ring" id="x-ring" viewBox="0 0 64 64" aria-hidden="true"><circle class="x-ring-bg" cx="32" cy="32" r="26"/><circle class="x-ring-fg" id="x-ring-fg" cx="32" cy="32" r="26" pathLength="100"/></svg>
       <div class="x-pops" id="x-pops"></div>
       <div class="x-hpp"><div class="x-hpbar"><i id="x-hpbar"></i></div><div class="x-num"><b id="x-hp">100</b><small>HP</small></div></div>
@@ -2375,13 +2384,25 @@ diffuseColor *= tpc;
         const shotCam = new THREE.PerspectiveCamera(); let shotOK = false;
         function aimCam() { return shotOK ? shotCam : camera; }
         const liveTargets = () => walls.concat(botMeshes.filter((m) => m.userData.bot.dead <= 0));
+        function hitTick(head, killed) {
+          if (!actx || musicMuted === undefined) return;
+          try {
+            const t = actx.currentTime, out = actx.destination;
+            const tone = (f, dl, du, v, ty) => { const o = actx.createOscillator(), g = actx.createGain(); o.type = ty; o.frequency.setValueAtTime(f, t + dl);
+              g.gain.setValueAtTime(0.0001, t + dl); g.gain.exponentialRampToValueAtTime(v, t + dl + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + dl + du);
+              o.connect(g); g.connect(out); o.start(t + dl); o.stop(t + dl + du + 0.02); };
+            if (head) { tone(1850, 0, 0.13, 0.16, "sine"); tone(2780, 0, 0.09, 0.07, "sine"); }
+            else tone(1150, 0, 0.045, 0.1, "triangle");
+            if (killed) { tone(740, 0.07, 0.12, 0.1, "triangle"); tone(1110, 0.13, 0.2, 0.1, "triangle"); }
+          } catch (e) {}
+        }
         function hitBot(b, h, w) {
           const head = b.model ? h.point.y - b.g.position.y >= b.h - HEAD_H : h.object.userData.head;
           if (!w.melee) { P.hits++; if (head) P.heads++; }
           lastDmg = 0;
           const killed = damage(b, w, P, head);
           const hm = $("x-hit"); hm.className = "x-hit"; void hm.offsetWidth;
-          hm.className = "x-hit is-on" + (head || killed ? " is-head" : ""); hitT = 0.12;
+          hm.className = "x-hit is-on" + (head || killed ? " is-head" : ""); hitT = head || killed ? 0.24 : 0.12; hitTick(head, killed);
           if (lastDmg > 0) { botPulse(b); dmgNumber(h.point, lastDmg, head); }
           bloodPuff(h.point, hbV.copy(h.point).sub(camera.position).normalize());
           playSfx(head ? "plate" : "soft", head ? 0.34 : 0.5, head ? 1.25 : 1, h.point);
@@ -2392,17 +2413,22 @@ diffuseColor *= tpc;
           const h = ray.intersectObjects(liveTargets(), false)[0];
           if (h && h.object.userData.bot) hitBot(h.object.userData.bot, h, w);
         }
+        function curSpread() {
+          const w = W[cur]; if (w.melee) return 0;
+          const steady = crouchKey() && P.slide <= 0 ? 0.55 : 1;
+          return scoped || (cur === 1 && ads > 0.8) ? 0 : cur === 1 ? w.spread * steady * (1 - ads) : w.spread * steady * (1 - ads * 0.7);
+        }
         function shoot() {
           if (P.dead || P.reload > 0 || P.cd > 0 || swapT > 0) return;
           const w = W[cur];
           if (w.melee) { melee(w); return; }
           if (P.ammo <= 0) { startReload(); return; }
           const steady = crouchKey() && P.slide <= 0 ? 0.55 : 1;
-          P.ammo--; P.shots++; P.prot = 0; P.cd = w.rate; recoil = w.vkick; { const pk = Math.min(1.5, pitch + w.kick * steady) - pitch; pitch += pk; if (cur === 1) { kickBack += pk; kickWait = 0.07; } } flash.intensity = 2.5;
+          P.ammo--; P.shots++; P.prot = 0; P.cd = w.rate; recoil = w.vkick; { const pk = Math.min(1.5, pitch + w.kick * steady) - pitch; pitch += pk; kickBack += pk; kickWait = cur === 1 ? 0.07 : w.rate + 0.06; } flash.intensity = 2.5;
           if (w.sound) yaw += (Math.random() - 0.5) * 0.02 * steady;
           shake = Math.max(shake, w.sound ? 0.05 : cur === 2 ? 0.012 : 0.009); punch = Math.min(0.06, punch + 0.004 + w.vkick * 0.005); if (cur === 1) boltT = 0.6;
           playShot(w.sound ? 0.6 : cur === 2 ? 0.45 : 0.5, w.snd);
-          const sp = scoped || (cur === 1 && ads > 0.8) ? 0 : cur === 1 ? w.spread * steady * (1 - ads) : w.spread * steady * (1 - ads * 0.7), ang = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * sp;
+          const sp = curSpread(), ang = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * sp;
           ray.setFromCamera({ x: Math.cos(ang) * rr, y: Math.sin(ang) * rr * camera.aspect }, aimCam()); ray.far = 300;
           const h = ray.intersectObjects(liveTargets(), false).find((x) => x.distance > 0.3);
           const muzzle = new THREE.Vector3(0.25 * (1 - ads), -0.2, -0.8).applyMatrix4(camera.matrixWorld);
@@ -2425,7 +2451,7 @@ diffuseColor *= tpc;
           $("x-hp").textContent = hp; $("x-hpbar").style.width = pct + "%";
           $("x-hpbar").style.backgroundColor = `hsl(${Math.round(Math.max(0, Math.min(100, pct)) * 1.2)}, 80%, 48%)`;
           const w = W[cur], a = $("x-ammo");
-          a.textContent = w.melee ? "∞" : P.reload > 0 ? "--" : P.ammo;
+          a.textContent = w.melee ? "∞" : P.ammo;
           a.classList.toggle("is-low", !w.melee && P.reload <= 0 && P.ammo <= Math.ceil(w.mag * 0.25));
           $("x-mag").textContent = w.melee ? "" : "/" + w.mag;
           $("x-wname").textContent = w.melee ? "Knife" : w.name;
@@ -2530,6 +2556,7 @@ diffuseColor *= tpc;
         const clock = new THREE.Clock(); let bob = 0, speedOp = 0;
         const speedEl = $("x-speed");
         const ringEl = $("x-ring"), ringFg = $("x-ring-fg"); let ringOn = false;
+        const sprEl = $("x-spr"); let sprOn = false, sprR = -1;
         // ===== Post-processing (quality: 0 低 = direct render, 1 中 = colour grade + bloom + MSAA, 2 高 = + depth-based ambient occlusion + FXAA) =====
         let Q = 2; try { const s = localStorage.getItem("krunkQ"); if (s !== null) Q = Math.max(0, Math.min(2, +s || 0)); } catch (e) {}
         const POST_OK = renderer.capabilities.isWebGL2 && !!renderer.extensions.get("EXT_color_buffer_float");
@@ -2743,7 +2770,10 @@ vec3 interiorCol( vec3 wp, vec3 cam ) {
 {
   float nvI = clamp( abs( dot( normal, normalize( vViewPosition ) ) ), 0.0, 1.0 );
   float frI = 0.04 + 0.96 * pow( 1.0 - nvI, 5.0 );
-  totalEmissiveRadiance += interiorCol( vIWp, cameraPosition ) * uIntE * ( 1.0 - frI );
+  float iD = length( vIWp - cameraPosition );
+  vec3 iC = vec3( 0.22, 0.2, 0.18 ) * mix( 1.0, 0.6, uIntN );
+  if ( iD < 75.0 ) iC = mix( interiorCol( vIWp, cameraPosition ), iC, smoothstep( 60.0, 75.0, iD ) );
+  totalEmissiveRadiance += iC * uIntE * ( 1.0 - frI );
 }`);
           };
           mat.customProgramCacheKey = () => "mid2glass";
@@ -3406,6 +3436,9 @@ void main() {
           const rOn = playing && !P.dead && P.reload > 0;
           if (rOn !== ringOn) { ringOn = rOn; ringEl.classList.toggle("is-on", rOn); }
           if (rOn) ringFg.style.strokeDashoffset = (100 * (P.reload / W[cur].reload)).toFixed(1);
+          { const rp = playing && !P.dead && !scoped ? curSpread() * innerWidth / 2 : 0, on = rp > 3;
+            if (on !== sprOn) { sprOn = on; sprEl.classList.toggle("is-on", on); }
+            if (on && Math.abs(rp - sprR) > 0.5) { sprR = rp; sprEl.style.setProperty("--r", rp.toFixed(1) + "px"); } }
           updateBots(dt); updateFx(dt);
           for (let i = fx.length - 1; i >= 0; i--) { fx[i].t -= dt; if (fx[i].t <= 0) { scene.remove(fx[i].o); fx[i].o.geometry.dispose(); fx.splice(i, 1); } }
           if (hitT > 0 && (hitT -= dt) <= 0) $("x-hit").className = "x-hit";
