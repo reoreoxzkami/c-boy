@@ -1157,7 +1157,7 @@
         function quicksand(x, z, r) {
           TZONES.push(Object.assign({}, TZ_NONE, { x, z, rx: r, rz: r, y: 0, spd: 0.45, jump: 5.2, fr: 16, acc: 9, sink: 0.42, slide: 8, bot: 0.5, msg: "流砂 - 足を取られる！" }));
           STAGE_DECOR.push(() => {
-            let sd = Math.round(x * 13 + z * 7) + 99; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+            let sd = Math.abs(Math.round(x * 13 + z * 7)) % 2147483000 + 99; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
             const tex = tzCanvas(512, 512, (g, w, h) => {
               const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
               gr.addColorStop(0, "rgba(92,70,44,1)"); gr.addColorStop(0.55, "rgba(120,94,62,1)"); gr.addColorStop(0.82, "rgba(160,128,88,0.75)"); gr.addColorStop(1, "rgba(190,160,120,0)");
@@ -1182,7 +1182,7 @@
         function icePond(x, z, rx, rz) {
           TZONES.push(Object.assign({}, TZ_NONE, { x, z, rx, rz, y: 0, fr: 0.55, acc: 2.4, slide: 0.35, msg: "氷の床 - 滑るぞ！" }));
           STAGE_DECOR.push(() => {
-            let sd = Math.round(x * 31 + z * 17) + 7; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+            let sd = Math.abs(Math.round(x * 31 + z * 17)) % 2147483000 + 7; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
             const tex = tzCanvas(1024, 1024, (g, w, h) => {
               const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
               gr.addColorStop(0, "rgba(120,170,196,1)"); gr.addColorStop(0.6, "rgba(160,200,220,1)"); gr.addColorStop(0.86, "rgba(214,232,240,0.95)"); gr.addColorStop(1, "rgba(240,246,250,0)");
@@ -1203,7 +1203,7 @@
         function lowGrav(x0, y0, z0, x1, y1, z1, color = 0x7fe9ff) {
           TZONES.push(Object.assign({}, TZ_NONE, { vol: [x0, y0, z0, x1, y1, z1], g: 4.2, jump: 9, bot: 1, msg: "低重力ゾーン" }));
           STAGE_DECOR.push(() => {
-            const N = 160, pos = new Float32Array(N * 3), sp = new Float32Array(N); let sd = Math.round(x0 * 7 + z0 * 3) + 5; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+            const N = 160, pos = new Float32Array(N * 3), sp = new Float32Array(N); let sd = Math.abs(Math.round(x0 * 7 + z0 * 3)) % 2147483000 + 5; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
             const yb = Math.max(y0, -1), yt = y1;
             for (let i = 0; i < N; i++) { pos[i * 3] = x0 + rnd() * (x1 - x0); pos[i * 3 + 1] = yb + rnd() * (yt - yb); pos[i * 3 + 2] = z0 + rnd() * (z1 - z0); sp[i] = 0.4 + rnd() * 0.9; }
             const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
