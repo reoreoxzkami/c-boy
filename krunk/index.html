@@ -182,6 +182,36 @@
       .x-mapsh { font: 13px/1 "Russo One", sans-serif; letter-spacing: .12em; color: rgba(255,255,255,.7); margin: 6px 0 8px; }
       .x-maps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 0 0 18px; }
       .x-map { text-align: left; color: #fff; border: 3px solid transparent; border-radius: 10px; padding: 10px 10px 9px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; font: 12px/1.25 "Russo One", sans-serif; text-shadow: 0 1px 2px rgba(0,0,0,.6); box-shadow: 0 5px 0 rgba(0,0,0,.35); transition: transform .15s, box-shadow .15s; }
+      .x-playrow { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      .x-cbtn { font: 18px/1 "Russo One", sans-serif; letter-spacing: .05em; color: #fff; background: linear-gradient(180deg, #4a5cff, #2a36c8); padding: 18px 26px; border-radius: var(--r-m); box-shadow: 0 6px 0 #1a2290, 0 10px 24px rgba(0,0,0,.4); cursor: pointer; border: 0; transition: transform .12s, filter .12s; }
+      .x-cbtn:hover, .x-cbtn:focus-visible { transform: translateY(-2px); filter: brightness(1.1); }
+      .x-cust { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(4,6,12,.72); backdrop-filter: blur(6px); padding: 16px; }
+      .x-cust[hidden] { display: none; }
+      .x-cbox { width: min(980px, 100%); max-height: 100%; overflow: auto; background: rgba(16,19,30,.96); border-radius: 16px; box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.12); color: #fff; padding: 18px 20px 20px; }
+      .x-chead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+      .x-chead b { font: 26px/1 "Russo One", sans-serif; color: #fff6d6; letter-spacing: .04em; }
+      .x-cclose { font: 26px/1 sans-serif; color: #fff; background: rgba(255,255,255,.1); border: 0; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; }
+      .x-cgrid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+      .x-cprev { background: radial-gradient(ellipse at 50% 30%, #2b3550, #0c0f18 75%); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; }
+      #x-c-canvas { width: 100%; height: 400px; display: block; }
+      .x-cpw { display: flex; gap: 6px; justify-content: center; }
+      .x-c-pw, .x-ctog { font: 12px/1 "Russo One", sans-serif; color: #fff; background: rgba(255,255,255,.1); border: 2px solid transparent; border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+      .x-c-pw.is-on, .x-ctog.is-on { border-color: #ffd23f; background: rgba(255,210,63,.18); }
+      .x-clab { font: 13px/1 "Russo One", sans-serif; letter-spacing: .1em; color: rgba(255,255,255,.7); margin: 12px 0 8px; display: block; }
+      .x-clab:first-child { margin-top: 0; }
+      .x-cname { width: 100%; box-sizing: border-box; font: 18px/1.2 "Russo One", sans-serif; color: #fff; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.18); border-radius: 10px; padding: 10px 12px; outline: none; }
+      .x-cname:focus { border-color: #ffd23f; }
+      .x-csw { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+      .x-csw--s { display: flex; gap: 6px; }
+      .x-cs { display: flex; flex-direction: column; align-items: center; gap: 5px; background: rgba(255,255,255,.06); border: 2px solid transparent; border-radius: 10px; padding: 7px 4px 6px; cursor: pointer; color: #fff; font: 11px/1.2 var(--sans), sans-serif; }
+      .x-cs i { display: block; width: 40px; height: 28px; border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+      .x-csw--s .x-cs { padding: 5px; } .x-csw--s .x-cs i { width: 26px; height: 26px; border-radius: 50%; } .x-csw--s .x-cs span { display: none; }
+      .x-cs:hover { background: rgba(255,255,255,.12); }
+      .x-cs.is-on { border-color: #ffd23f; background: rgba(255,210,63,.14); }
+      .x-crow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .x-csub { font: 12px/1 var(--sans), sans-serif; color: rgba(255,255,255,.7); margin-left: 8px; }
+      .x-cnote { font: 12px/1.4 var(--sans), sans-serif; color: rgba(255,255,255,.55); margin: 14px 0 0; }
+      @media (max-width: 760px) { .x-cgrid { grid-template-columns: 1fr; } #x-c-canvas { height: 280px; } }
       .x-map em { font-style: normal; font-size: 10px; letter-spacing: .1em; opacity: .85; }
       .x-map b { font-size: 14px; }
       .x-map small { font: 11px/1.3 var(--sans), sans-serif; opacity: .9; }
@@ -269,6 +299,25 @@
         <button class="x-play" id="x-again">もう一度</button>
       </div>
     </div>
+    <div class="x-cust" id="x-cust" hidden>
+      <div class="x-cbox">
+        <div class="x-chead"><b>カスタマイズ</b><button class="x-cclose" id="x-c-close" aria-label="閉じる">×</button></div>
+        <div class="x-cgrid">
+          <div class="x-cprev"><canvas id="x-c-canvas"></canvas>
+            <div class="x-cpw"><button class="x-c-pw" data-w="0">AR</button><button class="x-c-pw" data-w="1">スナイパー</button><button class="x-c-pw" data-w="2">SMG</button><button class="x-c-pw" data-w="3">ピストル</button></div>
+          </div>
+          <div class="x-copts">
+            <label class="x-clab" for="x-c-name">プレイヤー名</label>
+            <input class="x-cname" id="x-c-name" maxlength="16" placeholder="あなた" autocomplete="off" spellcheck="false" />
+            <p class="x-clab">スキン</p><div class="x-csw" id="x-c-outfit"></div>
+            <p class="x-clab">腕（一人称）</p>
+            <div class="x-crow"><button class="x-ctog" id="x-c-sleeve">袖</button><button class="x-ctog" id="x-c-glove">グローブ</button><span class="x-csub">肌の色</span><div class="x-csw x-csw--s" id="x-c-tone"></div></div>
+            <p class="x-clab">武器カラー</p><div class="x-csw" id="x-c-wskin"></div>
+            <p class="x-cnote">設定は自動で保存されます。武器カラーは自分の銃だけに反映されます。</p>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="x-over" id="x-over">
       <div class="x-panel">
         <h1 class="x-logo">KRUNK <span>ARENA</span></h1>
@@ -287,7 +336,7 @@
           <button class="x-class" data-cls="2"><em>SMG</em><b>Run N Gun</b><small>SMG · 超高速連射 · 移動速度アップ</small><i>24発 · HP 100</i></button>
         </div>
         <p class="x-note" id="x-clsnote">全クラス共通：ピストル（E）とナイフ（Q）</p>
-        <button class="x-play" id="x-play">PLAY</button>
+        <div class="x-playrow"><button class="x-play" id="x-play">PLAY</button><button class="x-cbtn" id="x-cbtn">カスタマイズ</button></div>
         <div class="x-qrow">画質 <button class="x-q" data-q="0">低</button><button class="x-q" data-q="1">中</button><button class="x-q" data-q="2">高</button></div>
         <div class="x-qrow">時間帯 <button class="x-t" data-t="0">昼</button><button class="x-t" data-t="1">朝</button><button class="x-t" data-t="2">夕方</button><button class="x-t" data-t="3">曇り</button><button class="x-t" data-t="4">夜</button></div>
         <div class="x-qrow">天気 <button class="x-w" data-w="0">晴れ</button><button class="x-w" data-w="1">雨</button></div>
@@ -3030,16 +3079,21 @@ diffuseColor *= tpc;
         const GUN_PBR = { gunmetal: [0.85, 0.36], polymerBlack: [0, 0.72], rubberBlack: [0, 0.92], steelBare: [1, 0.26], alloyGrey: [0.85, 0.42], walnut: [0, 0.55] };
         const gunWear = new THREE.TextureLoader().setCrossOrigin("anonymous").load("https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_rough_1k.jpg");
         gunWear.wrapS = gunWear.wrapT = THREE.RepeatWrapping;
-        function gunDetail(mat, ws, metal) {
+        const GSK = { m: { value: 0 }, c1: { value: new THREE.Color() }, c2: { value: new THREE.Color() }, c3: { value: new THREE.Color() } }, GUN_BODY = [], GUN_BODYN = { gunmetal: 1, polymerBlack: 1, alloyGrey: 1, walnut: 1 };
+        let GUN_HOOK = null;
+        function gunDetail(mat, ws, metal, body = false) {
+          mat.userData.gd = [ws, metal];
           mat.onBeforeCompile = (sh) => {
             sh.uniforms.uWear = { value: gunWear }; sh.uniforms.uWS = { value: ws }; sh.uniforms.uGM = { value: metal };
+            sh.uniforms.uSkM = GSK.m; sh.uniforms.uSkC1 = GSK.c1; sh.uniforms.uSkC2 = GSK.c2; sh.uniforms.uSkC3 = GSK.c3; sh.uniforms.uBody = { value: body ? 1 : 0 };
             sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vGP;\nvarying vec3 vGN;")
               .replace("#include <begin_vertex>", "#include <begin_vertex>\nvGP = position; vGN = normal;");
-            sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vGP;\nvarying vec3 vGN;\nuniform sampler2D uWear;\nuniform float uWS, uGM;")
+            sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vGP;\nvarying vec3 vGN;\nuniform sampler2D uWear;\nuniform float uWS, uGM, uSkM, uBody;\nuniform vec3 uSkC1, uSkC2, uSkC3;\nfloat skH(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }\nfloat skN(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(mix(skH(i), skH(i + vec3(1,0,0)), f.x), mix(skH(i + vec3(0,1,0)), skH(i + vec3(1,1,0)), f.x), f.y), mix(mix(skH(i + vec3(0,0,1)), skH(i + vec3(1,0,1)), f.x), mix(skH(i + vec3(0,1,1)), skH(i + vec3(1,1,1)), f.x), f.y), f.z); }")
+              .replace("#include <color_fragment>", "#include <color_fragment>\nif (uSkM > 0.5 && uBody > 0.5) { float sl = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)); vec3 sc = uSkC1; if (uSkM > 1.5) { vec3 q = vGP * uWS * 0.55; if (uSkM > 2.5) q = floor(q * 2.5) / 2.5; float n = skN(q) * 0.65 + skN(q * 2.3 + 7.1) * 0.35; sc = n < 0.42 ? uSkC1 : n < 0.6 ? uSkC2 : uSkC3; } diffuseColor.rgb = sc * mix(0.78, 1.12, clamp(sl * 5.0, 0.0, 1.0)); }")
               .replace("#include <map_fragment>", "#include <map_fragment>\nvec3 gw = pow(abs(normalize(vGN)), vec3(4.0)); gw /= (gw.x + gw.y + gw.z); vec3 gq = vGP * uWS;\nfloat gwr = texture2D(uWear, gq.zy).r * gw.x + texture2D(uWear, gq.xz).r * gw.y + texture2D(uWear, gq.xy).r * gw.z;\nfloat gfine = texture2D(uWear, gq.xy * 3.7 + gq.z).r;\ndiffuseColor.rgb *= mix(0.82, 1.15, mix(gwr, gfine, 0.35)) * mix(1.0, 1.0 + 0.6 * smoothstep(0.75, 0.95, gwr), uGM);")
               .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = clamp(roughnessFactor * mix(0.65, 1.4, mix(gwr, gfine, 0.4)), 0.05, 1.0);");
           };
-          mat.customProgramCacheKey = () => "gunwear";
+          mat.customProgramCacheKey = () => "gunwear2";
         }
         function metalize(mat, ws) {
           for (const k of MAP_KEYS) { const t = mat[k]; if (t && !(t.image && (t.image.width || t.image.videoWidth))) mat[k] = null; }
@@ -3054,7 +3108,9 @@ diffuseColor *= tpc;
             mat.roughness = Math.min(Math.max(mat.roughness == null ? 0.5 : mat.roughness, 0.28), 0.5);
             if (gunEnv) { mat.envMap = gunEnv; mat.envMapIntensity = 0.9; }
           }
-          if (typeof ws === "number" && isFinite(ws)) gunDetail(mat, ws, p ? p[0] : 0.5);
+          const body = !!GUN_BODYN[mat.name];
+          if (typeof ws === "number" && isFinite(ws)) gunDetail(mat, ws, p ? p[0] : 0.5, body);
+          if (body) { mat.userData.gd0 = [mat.metalness, mat.roughness]; GUN_BODY.push(mat); if (GUN_HOOK) GUN_HOOK(); }
           mat.needsUpdate = true;
           return mat;
         }
@@ -3497,11 +3553,18 @@ diffuseColor *= tpc;
         }
         // Bot guns: a clone of the class weapon's model at real size, muzzle forward (+Z).
         // It lives in the bot's rig and follows the right-hand bone each frame (grip at the hand); without a bone it sits at the body.
+        const BGM = new Map();
+        function botGunMat(m) {
+          if (!m || !m.userData || !m.userData.gd0) return m;
+          if (BGM.has(m)) return BGM.get(m);
+          const c = m.clone(); c.metalness = m.userData.gd0[0]; c.roughness = m.userData.gd0[1]; c.userData = {}; gunDetail(c, m.userData.gd[0], m.userData.gd[1], false); BGM.set(m, c); return c;
+        }
         function setBotGun(b) {
           const w = W[CL[b.cls].wep];
           if (!w.proto || b.gunW === w) return;
           if (b.gun) b.gun.parent.remove(b.gun);
           const gm = w.proto.clone(); gm.scale.multiplyScalar(w.real / w.size);
+          gm.traverse((o) => { if (o.isMesh) o.material = Array.isArray(o.material) ? o.material.map(botGunMat) : botGunMat(o.material); });
           gm.traverse((o) => { if (o.isMesh) { o.renderOrder = 0; o.castShadow = true; } if (o.name === "magazine" && w.magN) o.position.y = w.magY0; if (o.name === "slide" && w.slideN) o.position.z = w.slideZ0; });
           const hold = new THREE.Group(); hold.add(gm); hold.rotation.y = Math.PI;
           hold.position.set(-0.26, 1.2, 0.75 - w.real / 2);
@@ -3549,6 +3612,7 @@ diffuseColor *= tpc;
         }
 
         // Soldier model (three.js examples, Mixamo): loaded once, cloned per bot; capsules stay as hitboxes and fallback
+        let SOLDIER_G = null;
         const SOLDIER_URL = "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r147/examples/models/gltf/Soldier.glb";
         const BOT_H = 1.8, HEAD_H = 0.25, hitMat = new THREE.MeshBasicMaterial({ visible: false });
         // Subtle per-bot tints (fabric and skin stay natural)
@@ -3589,7 +3653,10 @@ diffuseColor *= tpc;
           [[0.37, 0.41, 0.27], [0.9, 0.75, 0.2], [0.28, 0.23, 0.16]],     // woodland
           [[0.2, 0.26, 0.38], [0.85, 0.85, 0.85], [0.18, 0.2, 0.24]],     // navy
           [[0.76, 0.66, 0.48], [0.36, 0.3, 0.22], [0.45, 0.38, 0.27]],    // desert
-          [[0.82, 0.83, 0.84], [0.2, 0.45, 0.8], [0.4, 0.42, 0.45]]];     // snow
+          [[0.82, 0.83, 0.84], [0.2, 0.45, 0.8], [0.4, 0.42, 0.45]],      // snow
+          [[0.55, 0.11, 0.09], [0.95, 0.85, 0.3], [0.22, 0.07, 0.06]],    // crimson (player only)
+          [[0.32, 0.21, 0.45], [0.2, 0.95, 0.9], [0.13, 0.11, 0.17]],     // phantom (player only)
+          [[0.85, 0.65, 0.2], [0.15, 0.15, 0.15], [0.26, 0.22, 0.17]]];   // gold (player only)
         const outfitCache = {};
         function outfitTex(i) {
           const o = OUTFITS[i % OUTFITS.length], img = $("x-tex-soldier");
@@ -3623,7 +3690,7 @@ diffuseColor *= tpc;
           m.traverse((o) => {
             if (!o.isMesh) return;
             o.frustumCulled = false; o.castShadow = true;
-            const one = (mm) => { const c = mm.clone(); const ot = outfitTex(idx); if (ot) { c.map = ot; c.color.setHex(0xffffff); } else c.color.setHex(tint); c.userData.baseE = 0; mats.push(c); return c; };
+            const one = (mm) => { const c = mm.clone(); const ot = outfitTex(idx % 7); if (ot) { c.map = ot; c.color.setHex(0xffffff); } else c.color.setHex(tint); c.userData.baseE = 0; mats.push(c); return c; };
             o.material = Array.isArray(o.material) ? o.material.map(one) : one(o.material);
           });
           b.flashT = 0; b.flashMats = mats;
@@ -3647,6 +3714,7 @@ diffuseColor *= tpc;
         if (THREE.GLTFLoader) {
           const loader = new THREE.GLTFLoader(); loader.setCrossOrigin("anonymous");
           loader.load(SOLDIER_URL, (gltf) => {
+            SOLDIER_G = gltf;
             auditModel(gltf.scene, "soldier");
             prepSoldier(gltf.scene);
             bots.forEach((b, i) => { try { attachSoldier(b, gltf, i); } catch (e) {} });
@@ -5231,6 +5299,187 @@ void main() {
             },
           };
         })();
+        // ===================== Customization: player name, outfit (character + sleeves/gloves/skin tone on the FP arms), weapon finish; saved in localStorage =====================
+        const CUST = (() => {
+          const DEF = { name: "", outfit: 0, tone: 1, sleeve: 1, glove: 0, wskin: 0, pw: 0 };
+          let st = Object.assign({}, DEF);
+          try { st = Object.assign(st, JSON.parse(localStorage.getItem("krunkCust") || "{}")); } catch (e) {}
+          const save = () => { try { localStorage.setItem("krunkCust", JSON.stringify(st)); } catch (e) {} };
+          const esc = (s) => String(s).replace(/[<>&"'`]/g, "").replace(/\s+/g, " ").trim().slice(0, 16);
+          // outfits: index into OUTFITS (character atlas recolour) + sleeve / glove colours for the first-person arms
+          const OUTF = [
+            { n: "スタンダード", o: 0, sl: 0x4d5636, gl: 0x2e2a24, sw: ["#7d7448", "#4d5636"] },
+            { n: "アーバン", o: 1, sl: 0x4a4d52, gl: 0x1c1c1e, sw: ["#8c8f94", "#3a3c40"] },
+            { n: "ブラックオプス", o: 2, sl: 0x1f2022, gl: 0x111112, sw: ["#2e2f31", "#bf1f14"] },
+            { n: "ウッドランド", o: 3, sl: 0x3f4a2c, gl: 0x3a2e20, sw: ["#5f6944", "#e5bf33"] },
+            { n: "ネイビー", o: 4, sl: 0x26324a, gl: 0x16181d, sw: ["#33415f", "#d9d9d9"] },
+            { n: "デザート", o: 5, sl: 0x8a7552, gl: 0x5a4a34, sw: ["#c2a87a", "#5c4c38"] },
+            { n: "スノー", o: 6, sl: 0xc9ccd0, gl: 0x6b6e72, sw: ["#d1d3d6", "#3373cc"] },
+            { n: "クリムゾン", o: 7, sl: 0x5a1612, gl: 0x1d1210, sw: ["#8c1c16", "#f2d94d"] },
+            { n: "ファントム", o: 8, sl: 0x2e2140, gl: 0x121016, sw: ["#523673", "#33f2e6"] },
+            { n: "ゴールド", o: 9, sl: 0x7a5e22, gl: 0x241f1a, sw: ["#d9a633", "#262626"] },
+          ];
+          const TONES = [{ n: "明るい", c: [1.1, 1.06, 1.02] }, { n: "標準", c: [1, 1, 1] }, { n: "日焼け", c: [0.84, 0.72, 0.6] }, { n: "濃い", c: [0.52, 0.39, 0.31] }];
+          // weapon finishes: m 0 factory, 1 solid paint, 2 camo, 3 digital camo; metal / rough of the painted parts
+          const WSK = [
+            { n: "標準", m: 0 },
+            { n: "ブラック", m: 1, c: ["#141416"], me: 0.2, ro: 0.5 },
+            { n: "タン", m: 1, c: ["#a8906a"], me: 0.05, ro: 0.62 },
+            { n: "ODグリーン", m: 1, c: ["#4c5638"], me: 0.05, ro: 0.62 },
+            { n: "アークティック", m: 1, c: ["#d6dade"], me: 0.05, ro: 0.55 },
+            { n: "ウッドランド迷彩", m: 2, c: ["#56603c", "#2e2b20", "#7a7349"], me: 0.02, ro: 0.72 },
+            { n: "デジタル砂漠", m: 3, c: ["#c4aa7c", "#8f7650", "#5e4e36"], me: 0.02, ro: 0.7 },
+            { n: "アーバン迷彩", m: 2, c: ["#8d9094", "#4c5054", "#26282b"], me: 0.04, ro: 0.68 },
+            { n: "サイバー", m: 3, c: ["#15162a", "#00d9ff", "#ff2fcf"], me: 0.3, ro: 0.4 },
+            { n: "ブラッドレッド", m: 1, c: ["#a3140f"], me: 0.35, ro: 0.3 },
+            { n: "ピンク", m: 1, c: ["#e88ac0"], me: 0.15, ro: 0.4 },
+            { n: "ゴールド", m: 1, c: ["#e0a83a"], me: 1, ro: 0.2 },
+          ];
+          // ---- name ----
+          function applyName() { P.name = esc(st.name) || "あなた"; }
+          // ---- weapon finish (uniforms shared by every player gun material; bot guns get their own unpainted copies) ----
+          function applyGun() {
+            const k = WSK[st.wskin] || WSK[0], c = k.c || ["#000"];
+            GSK.m.value = k.m; GSK.c1.value.set(c[0]); GSK.c2.value.set(c[1] || c[0]); GSK.c3.value.set(c[2] || c[0]);
+            for (const mt of GUN_BODY) { const o = mt.userData.gd0; if (k.m) { mt.metalness = k.me; mt.roughness = k.ro; } else if (o) { mt.metalness = o[0]; mt.roughness = o[1]; } }
+          }
+          // ---- first-person arms: sleeves (outfit colour, fabric weave), gloves, skin tone; arm vs hand islands found by connected components ----
+          let armImg = null, armLab = null, armTex = null;
+          // arm (sleeve) vs hand islands: per texture column, the dark gutter between them (clamped to the band where the atlas splits)
+          function armMask(img) {
+            const N = 256, c = document.createElement("canvas"); c.width = c.height = N; const g = c.getContext("2d"); g.drawImage(img, 0, 0, N, N);
+            const d = g.getImageData(0, 0, N, N).data, on = (x, y) => d[(y * N + x) * 4] + d[(y * N + x) * 4 + 1] + d[(y * N + x) * 4 + 2] >= 60;
+            const bd = new Array(N).fill(-1);
+            for (let x = 0; x < N; x++) { let br = 0, bs = 0, run = 0; for (let y = 80; y <= 161; y++) { if (y < 161 && !on(x, y)) run++; else { if (run > br) { br = run; bs = y - run; } run = 0; } } if (br) bd[x] = Math.max(113, Math.min(125, bs + (br >> 1))); }
+            for (let x = 0; x < N; x++) if (bd[x] < 0) { let l = -1, r = -1; for (let i = x; i >= 0; i--) if (bd[i] >= 0) { l = bd[i]; break; } for (let i = x; i < N; i++) if (bd[i] >= 0) { r = bd[i]; break; } bd[x] = l < 0 ? (r < 0 ? 120 : r) : r < 0 ? l : (l + r) >> 1; }
+            const kind = new Uint8Array(N * N);   // 0 none, 1 arm, 2 hand
+            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (on(x, y)) kind[y * N + x] = y < bd[x] ? 1 : 2;
+            return { N, kind };
+          }
+          function applyArms() {
+            if (!armImg) return;
+            try {
+              const W2 = armImg.naturalWidth || armImg.width, H2 = armImg.naturalHeight || armImg.height;
+              const c = document.createElement("canvas"); c.width = W2; c.height = H2; const g = c.getContext("2d"); g.drawImage(armImg, 0, 0);
+              if (!armLab) armLab = armMask(armImg);
+              const id = g.getImageData(0, 0, W2, H2), d = id.data, { N, kind } = armLab, of = OUTF[st.outfit] || OUTF[0], tone = (TONES[st.tone] || TONES[1]).c;
+              const sl = new THREE.Color(of.sl), gl = new THREE.Color(of.gl);
+              const toS = (v) => Math.round(Math.min(1, Math.max(0, v)) * 255);
+              for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+                const i = (y * W2 + x) * 4, kd = kind[((y * N / H2) | 0) * N + ((x * N / W2) | 0)];
+                const r = d[i] / 255, gg = d[i + 1] / 255, b = d[i + 2] / 255, lum = 0.3 * r + 0.59 * gg + 0.11 * b;
+                if (kd === 1 && st.sleeve) {
+                  // woven fabric: two-direction thread pattern + seam darkening, shaded by the original skin's lighting
+                  const weave = 0.9 + 0.1 * Math.sin(x * 1.9) * Math.sin(y * 1.9) + 0.05 * Math.sin((x + y) * 0.35), k = (0.55 + lum * 0.85) * weave;
+                  const cl = sl.clone().convertLinearToSRGB();
+                  d[i] = toS(cl.r * k); d[i + 1] = toS(cl.g * k); d[i + 2] = toS(cl.b * k);
+                } else if (kd === 2 && st.glove) {
+                  const grain = 0.94 + 0.06 * Math.sin(x * 3.1 + Math.sin(y * 0.7) * 2) * Math.sin(y * 2.7), k = (0.5 + lum * 0.9) * grain, cl = gl.clone().convertLinearToSRGB();
+                  d[i] = toS(cl.r * k); d[i + 1] = toS(cl.g * k); d[i + 2] = toS(cl.b * k);
+                } else if (kd) { d[i] = toS(r * tone[0]); d[i + 1] = toS(gg * tone[1]); d[i + 2] = toS(b * tone[2]); }
+              }
+              g.putImageData(id, 0, 0);
+              if (!armTex) { armTex = new THREE.CanvasTexture(c); armTex.flipY = false; armTex.encoding = THREE.sRGBEncoding; armTex.anisotropy = 4; }
+              else { armTex.image = c; armTex.needsUpdate = true; }
+              skinMat.map = armTex; skinMat.needsUpdate = true;
+            } catch (e) { console.warn("[cust] arms", e); }
+          }
+          (function waitArms() { const t = skinMat.map; if (t && t !== armTex && t.image && (t.image.naturalWidth || t.image.width)) { armImg = t.image; applyArms(); } else setTimeout(waitArms, 400); })();
+
+          // ---- UI ----
+          const $c = (id) => document.getElementById(id);
+          const panel = $c("x-cust");
+          const sw = (cls, items, sel, fn) => items.map((it, i) => `<button class="x-cs ${cls}${i === sel ? " is-on" : ""}" data-i="${i}" title="${it.n}">${fn(it, i)}<span>${it.n}</span></button>`).join("");
+          function render() {
+            $c("x-c-name").value = st.name;
+            $c("x-c-outfit").innerHTML = sw("x-cs-o", OUTF, st.outfit, (o) => `<i style="background:linear-gradient(135deg,${o.sw[0]} 0 62%,${o.sw[1]} 62%)"></i>`);
+            $c("x-c-tone").innerHTML = sw("x-cs-t", TONES, st.tone, (t) => `<i style="background:rgb(${t.c.map((v, j) => Math.min(255, Math.round([226, 178, 150][j] * v))).join(",")})"></i>`);
+            $c("x-c-wskin").innerHTML = sw("x-cs-w", WSK, st.wskin, (k) => `<i style="background:${k.m === 0 ? "linear-gradient(135deg,#3a3c40 0 50%,#16171a 50%)" : k.c.length > 1 ? `repeating-linear-gradient(45deg,${k.c[0]} 0 5px,${k.c[1]} 5px 9px,${k.c[2]} 9px 13px)` : k.c[0]}"></i>`);
+            $c("x-c-sleeve").classList.toggle("is-on", !!st.sleeve); $c("x-c-glove").classList.toggle("is-on", !!st.glove);
+            document.querySelectorAll(".x-c-pw").forEach((b) => b.classList.toggle("is-on", +b.dataset.w === st.pw));
+          }
+          function changed(what) { save(); render(); if (what === "name") applyName(); if (what === "arms") applyArms(); if (what === "gun") applyGun(); if (what === "outfit") { applyArms(); prevOutfit(); } if (what === "pw") prevGun(); }
+          panel.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const b = e.target.closest("button"); if (!b) return;
+            const i = +b.dataset.i;
+            if (b.classList.contains("x-cs-o")) { st.outfit = i; changed("outfit"); }
+            else if (b.classList.contains("x-cs-t")) { st.tone = i; changed("arms"); }
+            else if (b.classList.contains("x-cs-w")) { st.wskin = i; changed("gun"); }
+            else if (b.id === "x-c-sleeve") { st.sleeve = st.sleeve ? 0 : 1; changed("arms"); }
+            else if (b.id === "x-c-glove") { st.glove = st.glove ? 0 : 1; changed("arms"); }
+            else if (b.classList.contains("x-c-pw")) { st.pw = +b.dataset.w; changed("pw"); }
+            else if (b.id === "x-c-close") close();
+          });
+          for (const ev of ["mousedown", "mouseup", "pointerdown", "wheel"]) panel.addEventListener(ev, (e) => e.stopPropagation());
+          const nameIn = $c("x-c-name");
+          for (const ev of ["keydown", "keyup", "keypress"]) nameIn.addEventListener(ev, (e) => { e.stopPropagation(); if (ev === "keydown" && e.key === "Enter") nameIn.blur(); });
+          nameIn.addEventListener("input", () => { st.name = esc(nameIn.value.replace(/[<>&"'`]/g, "")).slice(0, 16); save(); applyName(); });
+          nameIn.addEventListener("blur", () => { nameIn.value = st.name; });
+          $c("x-cbtn").addEventListener("click", (e) => { e.stopPropagation(); open(); });
+          addEventListener("keydown", (e) => { if (e.code === "Escape" && !panel.hidden) close(); }, true);
+
+          // ---- 3D preview: the soldier in the chosen outfit (idle anim, slowly turning) + the chosen gun with its finish ----
+          let pr = null;
+          function initPreview() {
+            if (pr) return pr;
+            const cv = $c("x-c-canvas");
+            const rd = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+            rd.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); rd.outputEncoding = THREE.sRGBEncoding; rd.toneMapping = THREE.ACESFilmicToneMapping; rd.toneMappingExposure = 1.05;
+            const sc = new THREE.Scene();
+            if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(rd); sc.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; pm.dispose(); }
+            sc.add(new THREE.HemisphereLight(0xdfe8ff, 0x3a3020, 0.6));
+            const key = new THREE.DirectionalLight(0xfff1dc, 1.6); key.position.set(2.5, 4, 3); sc.add(key);
+            const rim = new THREE.DirectionalLight(0x9fc4ff, 1.0); rim.position.set(-3, 2.5, -3); sc.add(rim);
+            const floor = new THREE.Mesh(new THREE.CircleGeometry(1.1, 48), new THREE.MeshStandardMaterial({ color: 0x1a1d26, roughness: 0.6, metalness: 0.2, transparent: true, opacity: 0.85 })); floor.rotation.x = -Math.PI / 2; sc.add(floor);
+            const cam = new THREE.PerspectiveCamera(30, 1, 0.05, 50); cam.position.set(0.55, 1.15, 4.2); cam.lookAt(0.35, 0.92, 0);
+            const ch = new THREE.Group(); sc.add(ch);
+            const gn = new THREE.Group(); gn.position.set(1.05, 1.0, 0.6); sc.add(gn);
+            pr = { rd, sc, cam, ch, gn, mixer: null, soldier: null, mats: [], t: 0 };
+            return pr;
+          }
+          function prevOutfit() {
+            if (!pr || !SOLDIER_G || !THREE.SkeletonUtils) return;
+            const of = OUTF[st.outfit] || OUTF[0];
+            if (!pr.soldier) {
+              const m = THREE.SkeletonUtils.clone(SOLDIER_G.scene);
+              m.traverse((o) => { if (!o.isMesh) return; o.frustumCulled = false; o.material = [].concat(o.material).map((mm) => { const c = mm.clone(); pr.mats.push(c); return c; }); if (o.material.length === 1) o.material = o.material[0]; });
+              m.updateMatrixWorld(true);
+              const bb = new THREE.Box3().setFromObject(m), s = 1.8 / ((bb.max.y - bb.min.y) || 1);
+              const piv = new THREE.Group(); piv.add(m); m.position.y = -bb.min.y; piv.scale.setScalar(s); pr.ch.add(piv); pr.soldier = piv;
+              pr.mixer = new THREE.AnimationMixer(m); const cl = findClip(SOLDIER_G.animations, "Idle"); if (cl) pr.mixer.clipAction(cl).play();
+            }
+            const tex = of.o ? outfitTex(of.o) : null;
+            for (const c of pr.mats) { c.map = tex || soldierTex; c.color.setHex(0xffffff); c.needsUpdate = true; }
+          }
+          function prevGun() {
+            if (!pr) return;
+            while (pr.gn.children.length) pr.gn.remove(pr.gn.children[0]);
+            const w = W[[0, 1, 4, 2][st.pw] ?? 0];
+            if (!w || !w.proto) return;
+            const g = w.proto.clone(); g.traverse((o) => { if (o.isMesh) o.renderOrder = 0; });
+            g.scale.multiplyScalar(0.9 / w.size); pr.gn.add(g);
+          }
+          let raf = 0, last = 0;
+          function frame(t) {
+            if (panel.hidden || !pr) { raf = 0; return; }
+            raf = requestAnimationFrame(frame);
+            const dt = Math.min(0.05, (t - last) / 1000 || 0.016); last = t; pr.t += dt;
+            const cv = pr.rd.domElement, w = cv.clientWidth, h = cv.clientHeight;
+            if (w && h && (cv.width !== Math.round(w * pr.rd.getPixelRatio()) || cv.height !== Math.round(h * pr.rd.getPixelRatio()))) { pr.rd.setSize(w, h, false); pr.cam.aspect = w / h; pr.cam.updateProjectionMatrix(); }
+            if (!pr.soldier && SOLDIER_G) prevOutfit();
+            if (!pr.gn.children.length) prevGun();
+            if (pr.mixer) pr.mixer.update(dt);
+            pr.ch.rotation.y = Math.PI * 0.12 + Math.sin(pr.t * 0.5) * 0.5;
+            pr.gn.rotation.set(0.15 + Math.sin(pr.t * 0.7) * 0.08, pr.t * 0.6, 0);
+            pr.rd.render(pr.sc, pr.cam);
+          }
+          function open() { panel.hidden = false; render(); try { initPreview(); prevOutfit(); prevGun(); } catch (e) { console.warn("[cust] preview", e); $c("x-c-canvas").outerHTML = '<p class="x-cnote" style="height:200px;display:grid;place-items:center">プレビューを表示できません</p>'; } if (!raf && pr) raf = requestAnimationFrame(frame); }
+          function close() { panel.hidden = true; }
+          applyName(); applyGun();
+          return { st, applyName, applyGun, applyArms, open, close };
+        })();
+        GUN_HOOK = CUST.applyGun;
         function loop() {
           requestAnimationFrame(loop);
           const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
