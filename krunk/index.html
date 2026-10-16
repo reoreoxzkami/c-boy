@@ -5778,9 +5778,16 @@ void main() {
         const TOUCH = (() => {
           const T = { on: false, mx: 0, my: 0 };
           const qs = location.search;
-          const want = /[?&]touch\b/.test(qs) || ((matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0) && !/[?&]notouch\b/.test(qs) && !matchMedia("(pointer: fine)").matches);
-          if (!want) return T;
-          T.on = true; document.body.classList.add("x-touch");
+          if (/[?&]notouch\b/.test(qs)) return T;
+          const coarse = /[?&]touch\b/.test(qs) || matchMedia("(pointer: coarse)").matches || (navigator.maxTouchPoints > 0 && !matchMedia("(pointer: fine)").matches);
+          // touch UI turns on as soon as the screen is touched (touchscreen laptops report a fine pointer), and off again when a real mouse moves
+          let lastTouch = 0;
+          function activate(v) { if (T.on === v) return; T.on = v; document.body.classList.toggle("x-touch", v); T.shown = undefined; if (keysEl) keysEl.innerHTML = v ? TOUCH_KEYS : DESK_KEYS; }
+          const keysEl = document.querySelector(".x-keys"), DESK_KEYS = keysEl ? keysEl.innerHTML : "";
+          const TOUCH_KEYS = "<dt>左側をドラッグ</dt><dd>移動（端まで倒すと全速）</dd><dt>右側をドラッグ</dt><dd>視点（撃つボタンの上でも可）</dd><dt>撃つ / ADS</dt><dd>射撃 / 覗き込み（ADSはタップで切替）</dd><dt>しゃがみ</dt><dd>走りながら押すとスライディング</dd><dt>E / Q / R</dt><dd>ピストル / ナイフ / リロード</dd><dt>Ⅱ</dt><dd>一時停止</dd>";
+          addEventListener("touchstart", () => { lastTouch = performance.now(); activate(true); }, { capture: true, passive: true });
+          addEventListener("pointerdown", (e) => { if (e.pointerType === "touch" || e.pointerType === "pen") { lastTouch = performance.now(); activate(true); } }, true);
+          addEventListener("mousemove", (e) => { if (performance.now() - lastTouch > 1500 && (e.movementX || e.movementY)) activate(false); }, true);
           const root = document.createElement("div"); root.id = "x-tc"; root.className = "x-tc";
           root.innerHTML = `<div class="x-tc-look" id="x-tc-look"></div>
             <div class="x-tc-stick" id="x-tc-stick"><i></i></div>
@@ -5795,6 +5802,7 @@ void main() {
             <button class="x-tb x-tb-tab" data-k="board">☰</button>
             <button class="x-tb x-tb-pause" data-k="pause">Ⅱ</button>`;
           document.body.appendChild(root);
+          if (coarse) activate(true);
           const stick = root.querySelector("#x-tc-stick"), knob = stick.querySelector("i");
           let stickId = null, sx0 = 0, sy0 = 0;
           const looks = new Map(); // pointerId -> {x, y}
@@ -5831,45 +5839,44 @@ void main() {
             else if (k === "board") { if (board.hidden && !ended) { renderBoard(); board.hidden = false; } else board.hidden = true; }
             else if (k === "pause") { playing = false; mouseDown = false; scopeDown = false; fireN = 0; for (const kk in keys) keys[kk] = false; stickEnd(); over.hidden = false; }
           }
-          const btnOf = new Map(); // pointerId -> button key
-          root.addEventListener("pointerdown", (e) => {
-            e.preventDefault();
-            const b = e.target.closest(".x-tb");
+          const btnOf = new Map(); // touch identifier -> button key
+          function tStart(id, x, y, el) {
+            const b = el && el.closest ? el.closest(".x-tb") : null;
             if (b) {
-              const k = b.dataset.k; btnOf.set(e.pointerId, k); b.classList.add("is-on"); press(k, true);
-              if (k === "fire") looks.set(e.pointerId, { x: e.clientX, y: e.clientY });   // drag on the fire button also aims
-              try { root.setPointerCapture(e.pointerId); } catch (x) {}
+              const k = b.dataset.k; btnOf.set(id, k); b.classList.add("is-on"); press(k, true);
+              if (k === "fire") looks.set(id, { x, y });   // drag on the fire button also aims
               return;
             }
-            if (e.clientX < innerWidth * 0.42 && stickId === null) {
-              stickId = e.pointerId; sx0 = e.clientX; sy0 = e.clientY;
-              stick.style.left = sx0 + "px"; stick.style.top = sy0 + "px"; stick.classList.add("is-on"); setStick(e.clientX, e.clientY);
-            } else looks.set(e.pointerId, { x: e.clientX, y: e.clientY });
-            try { root.setPointerCapture(e.pointerId); } catch (x) {}
-          }, { passive: false });
-          root.addEventListener("pointermove", (e) => {
-            if (e.pointerId === stickId) setStick(e.clientX, e.clientY);
-            else lookMove(e.pointerId, e.clientX, e.clientY);
-          });
-          const up = (e) => {
-            if (e.pointerId === stickId) stickEnd();
-            looks.delete(e.pointerId);
-            const k = btnOf.get(e.pointerId);
-            if (k) { btnOf.delete(e.pointerId); press(k, false); root.querySelectorAll(`.x-tb[data-k="${k}"]`).forEach((b) => { if (![...btnOf.values()].includes(k)) b.classList.remove("is-on"); }); }
-          };
-          root.addEventListener("pointerup", up); root.addEventListener("pointercancel", up); root.addEventListener("lostpointercapture", up);
-          for (const ev of ["touchstart", "touchmove", "touchend", "gesturestart", "dblclick", "contextmenu"]) root.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
-          document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+            if (x < innerWidth * 0.42 && stickId === null) {
+              stickId = id; sx0 = x; sy0 = y;
+              stick.style.left = sx0 + "px"; stick.style.top = sy0 + "px"; stick.classList.add("is-on"); setStick(x, y);
+            } else looks.set(id, { x, y });
+          }
+          function tMove(id, x, y) { if (id === stickId) setStick(x, y); else lookMove(id, x, y); }
+          function tEnd(id) {
+            if (id === stickId) stickEnd();
+            looks.delete(id);
+            const k = btnOf.get(id);
+            if (k) { btnOf.delete(id); press(k, false); if (![...btnOf.values()].includes(k)) root.querySelectorAll(`.x-tb[data-k="${k}"]`).forEach((b) => b.classList.remove("is-on")); }
+          }
+          // touch events (every mobile browser); pointer events only for pen / browsers without touch events
+          root.addEventListener("touchstart", (e) => { e.preventDefault(); for (const t of e.changedTouches) tStart("t" + t.identifier, t.clientX, t.clientY, document.elementFromPoint(t.clientX, t.clientY) || t.target); }, { passive: false });
+          root.addEventListener("touchmove", (e) => { e.preventDefault(); for (const t of e.changedTouches) tMove("t" + t.identifier, t.clientX, t.clientY); }, { passive: false });
+          const te = (e) => { e.preventDefault(); for (const t of e.changedTouches) tEnd("t" + t.identifier); };
+          root.addEventListener("touchend", te, { passive: false }); root.addEventListener("touchcancel", te, { passive: false });
+          const NO_TE = !("ontouchstart" in window);
+          root.addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse" || (!NO_TE && e.pointerType === "touch")) return; e.preventDefault(); try { root.setPointerCapture(e.pointerId); } catch (x) {} tStart("p" + e.pointerId, e.clientX, e.clientY, e.target); });
+          root.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" || (!NO_TE && e.pointerType === "touch")) return; tMove("p" + e.pointerId, e.clientX, e.clientY); });
+          const pe = (e) => { if (e.pointerType === "mouse" || (!NO_TE && e.pointerType === "touch")) return; tEnd("p" + e.pointerId); };
+          root.addEventListener("pointerup", pe); root.addEventListener("pointercancel", pe);
+          for (const ev of ["gesturestart", "dblclick", "contextmenu"]) root.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
           // fullscreen + landscape when the match starts
-          $("x-play").addEventListener("click", () => {
+          $("x-play").addEventListener("click", () => { if (!T.on) return;
             const d = document.documentElement;
             try { const r = (d.requestFullscreen || d.webkitRequestFullscreen || (() => null)).call(d, { navigationUI: "hide" }); if (r && r.then) r.then(() => { try { screen.orientation.lock("landscape").catch(() => {}); } catch (x) {} }).catch(() => {}); } catch (x) {}
           });
-          // key hints on the title for touch
-          const keysEl = document.querySelector(".x-keys");
-          if (keysEl) keysEl.innerHTML = "<dt>左側をドラッグ</dt><dd>移動（端まで倒すと全速）</dd><dt>右側をドラッグ</dt><dd>視点（撃つボタンの上でも可）</dd><dt>撃つ / ADS</dt><dd>射撃 / 覗き込み（ADSはタップで切替）</dd><dt>しゃがみ</dt><dd>走りながら押すとスライディング</dd><dt>E / Q / R</dt><dd>ピストル / ナイフ / リロード</dd><dt>Ⅱ</dt><dd>一時停止</dd>";
           T.tick = () => {
-            const show = playing && !P.dead && !ended;
+            const show = T.on && playing && !P.dead && !ended;
             if (show !== T.shown) { T.shown = show; root.classList.toggle("is-on", show); if (!show) { stickEnd(); looks.clear(); btnOf.clear(); fireN = 0; mouseDown = false; keys.Space = false; keys.KeyC = false; root.querySelectorAll(".x-tb.is-on").forEach((b) => b.classList.remove("is-on")); } }
             const sn = cur === 1;
             if (sn !== T.sn) { T.sn = sn; root.classList.toggle("is-sniper", sn); }
