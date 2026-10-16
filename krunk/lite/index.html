@@ -5861,10 +5861,13 @@ void main() {
             if (k) { btnOf.delete(id); press(k, false); if (![...btnOf.values()].includes(k)) root.querySelectorAll(`.x-tb[data-k="${k}"]`).forEach((b) => b.classList.remove("is-on")); }
           }
           // touch events (every mobile browser); pointer events only for pen / browsers without touch events
-          root.addEventListener("touchstart", (e) => { e.preventDefault(); for (const t of e.changedTouches) tStart("t" + t.identifier, t.clientX, t.clientY, document.elementFromPoint(t.clientX, t.clientY) || t.target); }, { passive: false });
-          root.addEventListener("touchmove", (e) => { e.preventDefault(); for (const t of e.changedTouches) tMove("t" + t.identifier, t.clientX, t.clientY); }, { passive: false });
-          const te = (e) => { e.preventDefault(); for (const t of e.changedTouches) tEnd("t" + t.identifier); };
-          root.addEventListener("touchend", te, { passive: false }); root.addEventListener("touchcancel", te, { passive: false });
+          // listen on the whole window while the match runs: HUD panels (HP, killfeed, minimap...) sit above the control layer on small screens
+          const btnAt = (x, y) => { for (const el of document.elementsFromPoint(x, y)) { const b = el.closest && el.closest(".x-tb"); if (b && root.contains(b)) return b; } return null; };
+          const live = () => T.on && T.shown;
+          addEventListener("touchstart", (e) => { if (!live()) return; e.preventDefault(); for (const t of e.changedTouches) tStart("t" + t.identifier, t.clientX, t.clientY, btnAt(t.clientX, t.clientY)); }, { passive: false, capture: true });
+          addEventListener("touchmove", (e) => { if (!live()) return; e.preventDefault(); for (const t of e.changedTouches) tMove("t" + t.identifier, t.clientX, t.clientY); }, { passive: false, capture: true });
+          const te = (e) => { for (const t of e.changedTouches) tEnd("t" + t.identifier); if (live()) e.preventDefault(); };
+          addEventListener("touchend", te, { passive: false, capture: true }); addEventListener("touchcancel", te, { passive: false, capture: true });
           const NO_TE = !("ontouchstart" in window);
           root.addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse" || (!NO_TE && e.pointerType === "touch")) return; e.preventDefault(); try { root.setPointerCapture(e.pointerId); } catch (x) {} tStart("p" + e.pointerId, e.clientX, e.clientY, e.target); });
           root.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" || (!NO_TE && e.pointerType === "touch")) return; tMove("p" + e.pointerId, e.clientX, e.clientY); });
