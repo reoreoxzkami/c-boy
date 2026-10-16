@@ -2,7 +2,7 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>KRUNK ARENA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -212,6 +212,31 @@
       .x-csub { font: 12px/1 var(--sans), sans-serif; color: rgba(255,255,255,.7); margin-left: 8px; }
       .x-cnote { font: 12px/1.4 var(--sans), sans-serif; color: rgba(255,255,255,.55); margin: 14px 0 0; }
       @media (max-width: 760px) { .x-cgrid { grid-template-columns: 1fr; } #x-c-canvas { height: 280px; } }
+      .x-tc { position: fixed; inset: 0; z-index: 4; display: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+      .x-tc.is-on { display: block; }
+      .x-tc-stick { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35); left: 120px; bottom: auto; top: calc(100% - 130px); opacity: .45; pointer-events: none; }
+      .x-tc-stick.is-on { opacity: 1; }
+      .x-tc-stick i { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(255,255,255,.55); box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+      .x-tb { position: absolute; border: 0; border-radius: 50%; color: #fff; font: 13px/1 "Russo One", "Hiragino Sans", sans-serif; background: rgba(12,16,28,.45); box-shadow: inset 0 0 0 2px rgba(255,255,255,.45); width: 58px; height: 58px; padding: 0; touch-action: none; -webkit-tap-highlight-color: transparent; }
+      .x-tb.is-on { background: rgba(255,210,63,.55); box-shadow: inset 0 0 0 2px #ffd23f; }
+      .x-tb-fire { right: calc(118px + env(safe-area-inset-right)); bottom: 70px; width: 92px; height: 92px; font-size: 16px; background: rgba(226,59,59,.45); box-shadow: inset 0 0 0 3px rgba(255,140,140,.8); }
+      .x-tb-fire2 { left: calc(24px + env(safe-area-inset-left)); top: 42%; width: 64px; height: 64px; background: rgba(226,59,59,.35); box-shadow: inset 0 0 0 2px rgba(255,140,140,.7); }
+      .x-tb-ads { right: calc(220px + env(safe-area-inset-right)); bottom: 40px; }
+      .x-tb-jump { right: calc(24px + env(safe-area-inset-right)); bottom: 40px; width: 78px; height: 78px; }
+      .x-tb-crouch { right: calc(36px + env(safe-area-inset-right)); bottom: 138px; }
+      .x-tb-rel { right: calc(134px + env(safe-area-inset-right)); bottom: 178px; width: 48px; height: 48px; }
+      .x-tb-pis { right: calc(194px + env(safe-area-inset-right)); bottom: 130px; width: 48px; height: 48px; }
+      .x-tb-kn { right: calc(100px + env(safe-area-inset-right)); bottom: 232px; width: 44px; height: 44px; }
+      .x-tb-tab { right: calc(14px + env(safe-area-inset-right)); top: 50%; width: 42px; height: 42px; }
+      .x-tb-pause { left: 50%; margin-left: -21px; top: 70px; width: 42px; height: 42px; }
+      .x-touch .x-ammop { bottom: auto; top: 62px; right: 12px; transform: skewX(-14deg) scale(.62); transform-origin: top right; }
+      .x-touch .x-hpp { bottom: auto; top: 62px; left: 12px; transform: skewX(-14deg) scale(.62); transform-origin: top left; }
+      .x-touch .x-feed { transform: scale(.75); transform-origin: top right; top: 120px; }
+      .x-touch .x-over { overflow-y: auto; place-items: start center; -webkit-overflow-scrolling: touch; }
+      @media (max-height: 560px), (max-width: 700px) { .x-touch .x-over .x-panel { zoom: .62; margin: 10px auto; } .x-touch .x-cust .x-cbox, .x-touch .x-online .x-cbox { zoom: .7; } }
+      .x-touch canvas { touch-action: none; }
+      .x-litebtn { margin-left: 10px; font-size: 12px; color: #9fe8c4; text-decoration: underline; }
+      .x-litetag { padding: 3px 8px; border-radius: 6px; background: rgba(47,211,138,.2); color: #2fd38a; font-size: 12px; }
       .x-obtn { background: linear-gradient(180deg, #2fd38a, #12935a); box-shadow: 0 6px 0 #0b6a40, 0 10px 24px rgba(0,0,0,.4); }
       .x-obox { width: min(520px, 100%); }
       .x-obig { width: 100%; font-size: 20px; padding: 16px; }
@@ -425,12 +450,14 @@
       if (window.THREE) (function () {
         const $ = (id) => document.getElementById(id);
         const canvas = $("x-game");
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-        let pixR = Math.min(devicePixelRatio, 2);
+        const LITE = !!window.KRUNK_LITE || /[?&]lite\b/.test(location.search) || /\/lite\/([^/]*\.html)?$/.test(location.pathname);
+        if (LITE) document.documentElement.classList.add("x-lite");
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: !LITE, powerPreference: "high-performance" });
+        let pixR = LITE ? Math.min(devicePixelRatio, 1) * 0.85 : Math.min(devicePixelRatio, 2);
         renderer.setPixelRatio(pixR);
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
-        renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.enabled = !LITE; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         const scene = new THREE.Scene();
         const HORIZON = 0xc9d1d8;
         scene.background = new THREE.Color(HORIZON);
@@ -3037,6 +3064,7 @@ diffuseColor *= tpc;
         }
         function updatePlayer(dt) {
           let fx = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0), sx = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
+          if (TOUCH.on && (TOUCH.mx || TOUCH.my)) { fx = TOUCH.my; sx = TOUCH.mx; }
           let wx = -Math.sin(yaw) * fx + Math.cos(yaw) * sx, wz = -Math.cos(yaw) * fx - Math.sin(yaw) * sx;
           const wl = Math.hypot(wx, wz); if (wl) { wx /= wl; wz /= wl; }
           const diag = fx && sx ? 1.1 : 1, crouch = crouchKey();
@@ -4492,6 +4520,7 @@ diffuseColor *= tpc;
         const sprEl = $("x-spr"); let sprOn = false, sprR = -1;
         // ===== Post-processing (quality: 0 低 = direct render, 1 中 = colour grade + bloom + MSAA, 2 高 = + depth-based ambient occlusion + FXAA) =====
         let Q = 2; try { const s = localStorage.getItem("krunkQ"); if (s !== null) Q = Math.max(0, Math.min(2, +s || 0)); } catch (e) {}
+        if (LITE) Q = 0;
         const POST_OK = renderer.capabilities.isWebGL2 && !!renderer.extensions.get("EXT_color_buffer_float");
         if (!POST_OK) Q = 0;
         const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -4615,10 +4644,10 @@ void main() {
           renderer.setRenderTarget(null); renderer.render(postScene, postCam);
         }
         function setQuality(q) {
-          Q = POST_OK ? q : 0; try { localStorage.setItem("krunkQ", String(Q)); } catch (e) {}
+          Q = POST_OK && !LITE ? q : 0; if (!LITE) try { localStorage.setItem("krunkQ", String(Q)); } catch (e) {}
           document.querySelectorAll(".x-q").forEach((b) => b.classList.toggle("is-on", +b.dataset.q === Q));
           const ms = Q === 2 && renderer.capabilities.maxTextureSize >= 8192 ? 4096 : Q === 0 ? 1024 : 2048;
-          const pr = Q === 2 ? (devicePixelRatio >= 2 ? 1.75 : devicePixelRatio) : Math.min(devicePixelRatio, 1.25);
+          const pr = LITE ? Math.min(devicePixelRatio, 1) * 0.85 : Q === 2 ? (devicePixelRatio >= 2 ? 1.75 : devicePixelRatio) : Math.min(devicePixelRatio, 1.25);
           if (pr !== pixR) { pixR = pr; renderer.setPixelRatio(pixR); resize(); }
           if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
         }
@@ -4641,7 +4670,7 @@ void main() {
           if (pfT < 2) return;
           const fps = pfN / pfT; pfT = 0; pfN = 0;
           if (fps >= 50 || Q === 2) return; /* quality preset is never changed automatically (user choice wins) */
-          if (pixR > 0.75) { pixR = Math.max(0.75, pixR - 0.25); renderer.setPixelRatio(pixR); resize(); }
+          if (pixR > (LITE ? 0.6 : 0.75)) { pixR = Math.max(LITE ? 0.6 : 0.75, pixR - 0.25); renderer.setPixelRatio(pixR); resize(); }
           else if (sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
         }
 
@@ -5745,6 +5774,120 @@ void main() {
           // restart: everyone restarts together
           $("x-again").addEventListener("click", () => { if (N.on) send({ t: "reset" }); }, true);
         })();
+        // ===================== TOUCH CONTROLS (phones / tablets) =====================
+        const TOUCH = (() => {
+          const T = { on: false, mx: 0, my: 0 };
+          const qs = location.search;
+          const want = /[?&]touch\b/.test(qs) || ((matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0) && !/[?&]notouch\b/.test(qs) && !matchMedia("(pointer: fine)").matches);
+          if (!want) return T;
+          T.on = true; document.body.classList.add("x-touch");
+          const root = document.createElement("div"); root.id = "x-tc"; root.className = "x-tc";
+          root.innerHTML = `<div class="x-tc-look" id="x-tc-look"></div>
+            <div class="x-tc-stick" id="x-tc-stick"><i></i></div>
+            <button class="x-tb x-tb-fire" data-k="fire">撃つ</button>
+            <button class="x-tb x-tb-fire2" data-k="fire">撃つ</button>
+            <button class="x-tb x-tb-ads" data-k="ads">ADS</button>
+            <button class="x-tb x-tb-jump" data-k="jump">ジャンプ</button>
+            <button class="x-tb x-tb-crouch" data-k="crouch">しゃがみ</button>
+            <button class="x-tb x-tb-rel" data-k="reload">R</button>
+            <button class="x-tb x-tb-pis" data-k="pistol">E</button>
+            <button class="x-tb x-tb-kn" data-k="knife">Q</button>
+            <button class="x-tb x-tb-tab" data-k="board">☰</button>
+            <button class="x-tb x-tb-pause" data-k="pause">Ⅱ</button>`;
+          document.body.appendChild(root);
+          const stick = root.querySelector("#x-tc-stick"), knob = stick.querySelector("i");
+          let stickId = null, sx0 = 0, sy0 = 0;
+          const looks = new Map(); // pointerId -> {x, y}
+          const SENS = () => 0.0062 * (scoped ? 0.32 : ads > 0.5 ? 0.6 : 1);
+          function lookMove(id, x, y) {
+            const l = looks.get(id); if (!l) return;
+            const dx = x - l.x, dy = y - l.y; l.x = x; l.y = y;
+            if (!playing || P.dead) return;
+            mDX += dx * 0.6; mDY += dy * 0.6;
+            yaw -= dx * SENS(); pitch = Math.max(-1.55, Math.min(1.55, pitch - dy * SENS()));
+          }
+          function setStick(x, y) {
+            let dx = x - sx0, dy = y - sy0; const R = 52, d = Math.hypot(dx, dy);
+            if (d > R) { dx *= R / d; dy *= R / d; }
+            knob.style.transform = `translate(${dx}px, ${dy}px)`;
+            const nx = dx / R, ny = -dy / R;
+            T.mx = Math.abs(nx) > 0.38 ? Math.sign(nx) : 0; T.my = Math.abs(ny) > 0.38 ? Math.sign(ny) : 0;
+            T.sprint = d >= R * 0.95;
+          }
+          function stickEnd() { stickId = null; T.mx = T.my = 0; knob.style.transform = ""; stick.classList.remove("is-on"); stick.style.left = ""; stick.style.top = ""; }
+          let fireN = 0;
+          function press(k, down) {
+            if (k === "fire") {
+              fireN += down ? 1 : -1; if (fireN < 0) fireN = 0;
+              if (down) { initAudio(); if (playing && !P.dead) { mouseDown = true; if (!W[cur].auto) shoot(); } }
+              else if (!fireN) mouseDown = false;
+            } else if (k === "jump") keys.Space = down;
+            else if (k === "crouch") { keys.KeyC = down; if (down && playing && !P.dead && P.ground && Math.hypot(P.vel.x, P.vel.z) > 6.5) startSlide(); }
+            else if (!down) return;
+            else if (k === "ads") { scopeDown = !scopeDown; }
+            else if (k === "reload") { if (playing && !P.dead) startReload(); }
+            else if (k === "pistol") { if (playing && !P.dead) switchTo(cur === 2 ? primary : 2); }
+            else if (k === "knife") { if (playing && !P.dead) switchTo(cur === 3 ? primary : 3); }
+            else if (k === "board") { if (board.hidden && !ended) { renderBoard(); board.hidden = false; } else board.hidden = true; }
+            else if (k === "pause") { playing = false; mouseDown = false; scopeDown = false; fireN = 0; for (const kk in keys) keys[kk] = false; stickEnd(); over.hidden = false; }
+          }
+          const btnOf = new Map(); // pointerId -> button key
+          root.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            const b = e.target.closest(".x-tb");
+            if (b) {
+              const k = b.dataset.k; btnOf.set(e.pointerId, k); b.classList.add("is-on"); press(k, true);
+              if (k === "fire") looks.set(e.pointerId, { x: e.clientX, y: e.clientY });   // drag on the fire button also aims
+              try { root.setPointerCapture(e.pointerId); } catch (x) {}
+              return;
+            }
+            if (e.clientX < innerWidth * 0.42 && stickId === null) {
+              stickId = e.pointerId; sx0 = e.clientX; sy0 = e.clientY;
+              stick.style.left = sx0 + "px"; stick.style.top = sy0 + "px"; stick.classList.add("is-on"); setStick(e.clientX, e.clientY);
+            } else looks.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            try { root.setPointerCapture(e.pointerId); } catch (x) {}
+          }, { passive: false });
+          root.addEventListener("pointermove", (e) => {
+            if (e.pointerId === stickId) setStick(e.clientX, e.clientY);
+            else lookMove(e.pointerId, e.clientX, e.clientY);
+          });
+          const up = (e) => {
+            if (e.pointerId === stickId) stickEnd();
+            looks.delete(e.pointerId);
+            const k = btnOf.get(e.pointerId);
+            if (k) { btnOf.delete(e.pointerId); press(k, false); root.querySelectorAll(`.x-tb[data-k="${k}"]`).forEach((b) => { if (![...btnOf.values()].includes(k)) b.classList.remove("is-on"); }); }
+          };
+          root.addEventListener("pointerup", up); root.addEventListener("pointercancel", up); root.addEventListener("lostpointercapture", up);
+          for (const ev of ["touchstart", "touchmove", "touchend", "gesturestart", "dblclick", "contextmenu"]) root.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+          document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+          // fullscreen + landscape when the match starts
+          $("x-play").addEventListener("click", () => {
+            const d = document.documentElement;
+            try { const r = (d.requestFullscreen || d.webkitRequestFullscreen || (() => null)).call(d, { navigationUI: "hide" }); if (r && r.then) r.then(() => { try { screen.orientation.lock("landscape").catch(() => {}); } catch (x) {} }).catch(() => {}); } catch (x) {}
+          });
+          // key hints on the title for touch
+          const keysEl = document.querySelector(".x-keys");
+          if (keysEl) keysEl.innerHTML = "<dt>左側をドラッグ</dt><dd>移動（端まで倒すと全速）</dd><dt>右側をドラッグ</dt><dd>視点（撃つボタンの上でも可）</dd><dt>撃つ / ADS</dt><dd>射撃 / 覗き込み（ADSはタップで切替）</dd><dt>しゃがみ</dt><dd>走りながら押すとスライディング</dd><dt>E / Q / R</dt><dd>ピストル / ナイフ / リロード</dd><dt>Ⅱ</dt><dd>一時停止</dd>";
+          T.tick = () => {
+            const show = playing && !P.dead && !ended;
+            if (show !== T.shown) { T.shown = show; root.classList.toggle("is-on", show); if (!show) { stickEnd(); looks.clear(); btnOf.clear(); fireN = 0; mouseDown = false; keys.Space = false; keys.KeyC = false; root.querySelectorAll(".x-tb.is-on").forEach((b) => b.classList.remove("is-on")); } }
+            const sn = cur === 1;
+            if (sn !== T.sn) { T.sn = sn; root.classList.toggle("is-sniper", sn); }
+            root.querySelector(".x-tb-ads").classList.toggle("is-on", scopeDown);
+          };
+          return T;
+        })();
+        // ===================== LOW-SPEC BUILD SWITCH (/krunk/ <-> /krunk/lite/) =====================
+        (() => {
+          const row = document.querySelector(".x-qrow"); if (!row) return;
+          const base = location.pathname.replace(/[^/]*$/, "").replace(/lite\/$/, "");
+          const target = (LITE ? base : base + "lite/") + location.search;
+          const a = document.createElement("a"); a.className = "x-litebtn"; a.href = target;
+          a.textContent = LITE ? "通常版に切り替え" : "低スペック版に切り替え";
+          a.addEventListener("click", (e) => e.stopPropagation());
+          if (LITE) { row.innerHTML = '画質 <span class="x-litetag">低スペック版</span>'; }
+          row.appendChild(a);
+        })();
         function loop() {
           requestAnimationFrame(loop);
           const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
@@ -5826,6 +5969,7 @@ void main() {
           gun.visible = !scoped && !P.dead;
           updateArms();
           if (NETX.tick) NETX.tick(dt);
+          if (TOUCH.tick) TOUCH.tick();
           MID2.tick(dt); LOW2.tick(dt); LOW3.tick(dt); AIMT.tick(dt); SNOWFALL.tick(dt); for (const f of SKY_ANIM) f(dt);
           // Speed lines
           const sl = live ? Math.max(0, Math.min(1, (sp - 12.5) / 5)) * 0.6 : 0;
