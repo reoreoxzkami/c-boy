@@ -236,6 +236,10 @@
       .x-touch .x-over { overflow-y: auto; place-items: start center; -webkit-overflow-scrolling: touch; }
       @media (max-height: 560px), (max-width: 700px) { .x-touch .x-over .x-panel { zoom: .62; margin: 10px auto; } .x-touch .x-cust .x-cbox, .x-touch .x-online .x-cbox { zoom: .7; } }
       .x-touch canvas { touch-action: none; }
+      .x-tsens { display: none; align-items: center; gap: 10px; justify-content: center; margin: 10px 0 0; font-size: 14px; color: #fff; }
+      .x-touch .x-tsens { display: flex; }
+      .x-tsens input { width: 180px; touch-action: auto; }
+      .x-tsens b { min-width: 3em; text-align: left; }
       .x-litebtn { margin-left: 10px; font-size: 12px; color: #9fe8c4; text-decoration: underline; }
       .x-litetag { padding: 3px 8px; border-radius: 6px; background: rgba(47,211,138,.2); color: #2fd38a; font-size: 12px; }
       .x-obtn { background: linear-gradient(180deg, #2fd38a, #12935a); box-shadow: 0 6px 0 #0b6a40, 0 10px 24px rgba(0,0,0,.4); }
@@ -5807,7 +5811,19 @@ void main() {
           const stick = root.querySelector("#x-tc-stick"), knob = stick.querySelector("i");
           let stickId = null, sx0 = 0, sy0 = 0;
           const looks = new Map(); // pointerId -> {x, y}
-          const SENS = () => 0.0062 * (scoped ? 0.32 : ads > 0.5 ? 0.6 : 1);
+          // touch look sensitivity (title slider, saved). 1.0 = 0.0036 rad/px (was 0.0062, user found it too fast)
+          let TSENS = parseFloat(localStorage.getItem("krunkTouchSens")); if (!(TSENS >= 0.2 && TSENS <= 3)) TSENS = 1;
+          const SENS = () => 0.0036 * TSENS * (scoped ? 0.32 : ads > 0.5 ? 0.6 : 1);
+          (() => {
+            const row = document.querySelector(".x-playrow"); if (!row) return;
+            const d = document.createElement("div"); d.className = "x-tsens";
+            d.innerHTML = '<span>タッチ視点感度</span><input type="range" min="0.2" max="3" step="0.05"><b></b>';
+            const r = d.querySelector("input"), v = d.querySelector("b");
+            const show = () => { v.textContent = TSENS.toFixed(2); };
+            r.value = TSENS; show();
+            r.addEventListener("input", () => { TSENS = parseFloat(r.value); localStorage.setItem("krunkTouchSens", TSENS); show(); });
+            row.after(d);
+          })();
           function lookMove(id, x, y) {
             const l = looks.get(id); if (!l) return;
             const dx = x - l.x, dy = y - l.y; l.x = x; l.y = y;
